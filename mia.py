@@ -371,3 +371,4 @@ if __name__ == '__main__':
         lr_acc, rf_acc = mia(k, 2500, random=False)
         log['lr'] += [lr_acc]
         log['rf'] += [rf_acc]
+
