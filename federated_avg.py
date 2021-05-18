@@ -91,6 +91,9 @@ class FederatedAveraging():
 
         self.server_model.to(self.device)
 
+    # YL: no need to make this function specific to MNIST: you can define something like
+    # _create_clients(self, num_clients, architecture=CNNMnist())
+    # then set dict_users[i]['model'] = architecture()
     def _create_clients(self, num_clients):
         """
         Return dictionary dict_users,
@@ -192,6 +195,10 @@ class FederatedAveraging():
                         (dict_users[i], idxs[rand * num_imgs:(rand + 1) * num_imgs]), axis=0)
         return dict_users
 
+    # YL: consider making a function called _train_client(self, client_id, retrain=True, ...)
+    # to allow training/finetuning a selected client
+    # this allows you to reuse the function for both federatedAvg and deletion process
+    # then _train_clients(self, ...) will just call self._train_client(...) for randomly chosen clients
     def _train_clients(self, ratio, epochs, opt, criterion, lr):
         """
         Federated Averaging,
@@ -228,6 +235,9 @@ class FederatedAveraging():
             else:
                 exit('unsupported optimizer!')
 
+            # YL: consider creating a function like
+            # train_log, val_log = train_model(model, optimizer, train_loader, val_loader, epochs)
+            # so that you can reuse it in many different classes/objects
             for epoch in range(epochs):
                 # train
                 train_loss = 0
@@ -313,6 +323,7 @@ class FederatedAveraging():
             test_acc = self._update_server(weights)
         np.save(self.log_path, self.log)
 
+    # YL: consider making this a function outside of the class (so that you can reuse it in different objects)
     def eval(self, model, dataloader):
         """
         Return prediction accuracy.

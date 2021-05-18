@@ -16,6 +16,8 @@ import random
 from models import CNNMnist
 from federated_avg import ClientDataset, FederatedAveraging
 
+# YL: consider using inheritance, e.g. by making Sisa a child class of FederatedAveraging,
+# or try to reuse the functions in the fl object
 class Sisa():
     """"
     SISA data deletion in federated learning system.
@@ -50,6 +52,7 @@ class Sisa():
 
         batch_size = self.fl.batch_size
 
+        # YL: feels a bit weird (by re-loading datasets) but it is ok for now
         self.fl.clients[id]['train'] = DataLoader(ClientDataset(dataset, idxs_train),
                                                   batch_size=batch_size, shuffle=True)
 
@@ -58,6 +61,7 @@ class Sisa():
 
         print('Request completed! Total {:d} data deleted in training set.'.format(len(to_be_deleted)))
 
+    # YL: you can reuse/inherent _train_client() function from the fl object
     def _retrain_client_model(self, id, epochs, opt, criterion, lr):
         """
         Retrain the client model
@@ -141,9 +145,12 @@ class Sisa():
         self._deletion_request(id, idxs)
 
         # deviate other clients from server
+        # YL: what does "ratio" mean here? should we re-train all the other client
+        # (although expensive) to prevent info leakage?
         weights = self.fl._train_clients(ratio, epochs1, opt, criterion, lr)
 
         # retrain the client that pulled request
+        # YL: as said you can reuse functions in the fl object
         w1 = self._retrain_client_model(id, epochs2, opt, criterion, lr)
 
         avg_w = w1[0]
