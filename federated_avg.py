@@ -76,11 +76,13 @@ class FederatedAveraging():
             self.test_loader = DataLoader(self.test_data, batch_size=int(len(self.test_data) / 10), shuffle=False)
             self.clients_dataset = self._distribute_mnist_dataset(self.training_data, num_clients)
             self.server_model = CNNMnist()
+            self.architecture = CNNMnist()
+
         ## more experiments expected
         else:
             exit('unsupported dataset!')
 
-        self.clients = self._create_clients(num_clients)
+        self.clients = self._create_clients(num_clients, self.architecture)
 
         # activate cuda
         if use_gpu and torch.cuda.is_available():
@@ -91,7 +93,7 @@ class FederatedAveraging():
 
         self.server_model.to(self.device)
 
-    def _create_clients(self, num_clients):
+    def _create_clients(self, num_clients, architecture=CNNMnist()):
         """
         Return dictionary dict_users,
             keys: ('model', 'train', 'val', 'test')
@@ -99,32 +101,29 @@ class FederatedAveraging():
         dict_users = {}
         dataset = self.training_data
 
-        if self.dataset == 'mnist':
-            for i in range(num_clients):
-                idxs = list(self.clients_dataset[i])
-                # print(idxs)
+        for i in range(num_clients):
+            idxs = list(self.clients_dataset[i])
+            # print(idxs)
 
-                dict_users[i] = {}
-                dict_users[i]['model'] = CNNMnist()
+            dict_users[i] = {}
+            dict_users[i]['model'] = architecture
 
-                idxs_train = idxs[:int(0.8 * len(idxs))]
-                idxs_val = idxs[int(0.8 * len(idxs)):int(0.9 * len(idxs))]
-                idxs_test = idxs[int(0.9 * len(idxs)):]
+            idxs_train = idxs[:int(0.8 * len(idxs))]
+            idxs_val = idxs[int(0.8 * len(idxs)):int(0.9 * len(idxs))]
+            idxs_test = idxs[int(0.9 * len(idxs)):]
 
-                if self.batch_size == 'inf':
-                    # federated sgd, use entire local dataset to train agent
-                    batch_size = len(idxs_train)
-                else:
-                    batch_size = self.batch_size
+            if self.batch_size == 'inf':
+                # federated sgd, use entire local dataset to train agent
+                batch_size = len(idxs_train)
+            else:
+                batch_size = self.batch_size
 
-                dict_users[i]['train'] = DataLoader(ClientDataset(dataset, idxs_train),
-                                                    batch_size=batch_size, shuffle=True)
-                dict_users[i]['val'] = DataLoader(ClientDataset(dataset, idxs_val),
-                                                  batch_size=int(len(idxs_val) / 10), shuffle=False)
-                dict_users[i]['test'] = DataLoader(ClientDataset(dataset, idxs_test),
-                                                   batch_size=int(len(idxs_test) / 10), shuffle=False)
-        else:
-            exit('unsupported dataset!')
+            dict_users[i]['train'] = DataLoader(ClientDataset(dataset, idxs_train),
+                                                batch_size=batch_size, shuffle=True)
+            dict_users[i]['val'] = DataLoader(ClientDataset(dataset, idxs_val),
+                                                batch_size=int(len(idxs_val) / 10), shuffle=False)
+            dict_users[i]['test'] = DataLoader(ClientDataset(dataset, idxs_test),
+                                                batch_size=int(len(idxs_test) / 10), shuffle=False)
 
         return dict_users
 
@@ -192,6 +191,76 @@ class FederatedAveraging():
                         (dict_users[i], idxs[rand * num_imgs:(rand + 1) * num_imgs]), axis=0)
         return dict_users
 
+    def _train_client(self, client_id, epochs, opt, criterion, lr, retrain=False):
+        """
+        :param client_id:
+        :param ratio:
+        :param epochs:
+        :param opt:
+        :param criterion:
+        :param lr:
+        :param retrain: retrain this client model from scratch, if true
+        :return:
+        """
+        if retrain is True:
+            self.clients[client_id]['model'] = self.architecture
+        else:
+            self.clients[client_id]['model'] = copy.deepcopy(self.server_model)
+
+        self.clients[client_id]['model'].to(self.device)
+
+        if opt == 'sgd':
+            optimizer = optim.SGD(self.clients[client_id]['model'].parameters(), lr=lr, momentum=0.8)
+        elif opt == 'adam':
+            optimizer = optim.Adam(self.clients[client_id]['model'].parameters(), lr=lr, weight_decay=1e-5)
+        else:
+            exit('unsupported optimizer!')
+
+        if criterion == 'cross_entropy':
+            loss_fn = nn.CrossEntropyLoss()
+        elif criterion == 'nll':
+            loss_fn = nn.NLLLoss()
+        else:
+            exit('unsupported loss!')
+
+        train_loss, val_loss = 0, 0
+
+        for epoch in range(epochs):
+            # train
+            train_loss = 0
+            for i, (img, label) in enumerate(self.clients[client_id]['train']):
+                self.clients[client_id]['model'].train()
+                img = img.to(self.device)
+                label = label.to(self.device)
+
+                out = self.clients[client_id]['model'](img)
+                optimizer.zero_grad()
+                loss = loss_fn(out, label)
+                train_loss += loss.item()
+                loss.backward()
+                optimizer.step()
+
+            # print('local epoch {:d}, train loss {:.4f}'.format(epoch, train_loss/len(self.clients[c]['train'])))
+
+            # validation
+            val_loss = 0
+            for i, (img, label) in enumerate(self.clients[client_id]['val']):
+                self.clients[client_id]['model'].eval()
+                img = img.to(self.device)
+                label = label.to(self.device)
+
+                with torch.no_grad():
+                    out = self.clients[client_id]['model'](img)
+                    loss = loss_fn(out, label)
+                    val_loss += loss.item()
+
+            # print('local epoch {:d}, val loss {:.4f}'.format(epoch, val_loss/len(self.clients[c]['val'])))
+
+        train_loss = train_loss / len(self.clients[client_id]['train'])
+        val_loss = val_loss / len(self.clients[client_id]['val'])
+        test_acc = evaluate(self.clients[client_id]['model'], self.clients[client_id]['test'], self.device)
+        return train_loss, val_loss, test_acc
+
     def _train_clients(self, ratio, epochs, opt, criterion, lr):
         """
         Federated Averaging,
@@ -209,62 +278,11 @@ class FederatedAveraging():
         val_log = []
         test_acc = 0
 
-        if criterion == 'cross_entropy':
-            loss_fn = nn.CrossEntropyLoss()
-        elif criterion == 'nll':
-            loss_fn = nn.NLLLoss()
-        else:
-            exit('unsupported loss!')
-
         for t, c in enumerate(selected):
-
-            # retrive global model
-            self.clients[c]['model'] = copy.deepcopy(self.server_model)
-            self.clients[c]['model'].to(self.device)
-            if opt == 'sgd':
-                optimizer = optim.SGD(self.clients[c]['model'].parameters(), lr=lr, momentum=0.8)
-            elif opt == 'adam':
-                optimizer = optim.Adam(self.clients[c]['model'].parameters(), lr=lr, weight_decay=1e-5)
-            else:
-                exit('unsupported optimizer!')
-
-            for epoch in range(epochs):
-                # train
-                train_loss = 0
-                for i, (img, label) in enumerate(self.clients[c]['train']):
-                    self.clients[c]['model'].train()
-                    img = img.to(self.device)
-                    label = label.to(self.device)
-
-                    out = self.clients[c]['model'](img)
-                    optimizer.zero_grad()
-                    loss = loss_fn(out, label)
-                    train_loss += loss.item()
-                    loss.backward()
-                    optimizer.step()
-
-                # print('local epoch {:d}, train loss {:.4f}'.format(epoch, train_loss/len(self.clients[c]['train'])))
-
-                # validation
-                val_loss = 0
-                for i, (img, label) in enumerate(self.clients[c]['val']):
-                    self.clients[c]['model'].eval()
-                    img = img.to(self.device)
-                    label = label.to(self.device)
-
-                    with torch.no_grad():
-                        out = self.clients[c]['model'](img)
-                        loss = loss_fn(out, label)
-                        val_loss += loss.item()
-
-                # print('local epoch {:d}, val loss {:.4f}'.format(epoch, val_loss/len(self.clients[c]['val'])))
-
-                if epoch == epochs - 1:
-                    train_log += [train_loss / len(self.clients[c]['train'])]
-                    val_log += [val_loss / len(self.clients[c]['val'])]
-
-            test_acc += self.eval(self.clients[c]['model'], self.clients[c]['test'])
-
+            train_loss, val_loss, acc = self._train_client(c, epochs, opt, criterion, lr)
+            train_log += [train_loss]
+            val_log += [val_loss]
+            test_acc += acc
             weights[t] = self.clients[c]['model'].state_dict()
 
         test_acc /= num
@@ -293,7 +311,7 @@ class FederatedAveraging():
 
         self.server_model.to(self.device)
         self.server_model.eval()
-        test_acc = self.eval(self.server_model, self.test_loader)
+        test_acc = evaluate(self.server_model, self.test_loader, self.device)
         print('global test acc {:.4f}'.format(test_acc))
         self.log['test_global'] += [test_acc]
 
@@ -313,19 +331,20 @@ class FederatedAveraging():
             test_acc = self._update_server(weights)
         np.save(self.log_path, self.log)
 
-    def eval(self, model, dataloader):
-        """
-        Return prediction accuracy.
-        """
-        total, correct = 0, 0
-        for data in dataloader:
-            inputs, labels = data
-            inputs, labels = inputs.to(self.device), labels.to(self.device)
-            output = model(inputs)
-            max_pred, pred = torch.max(output.data, dim=1)
-            total += labels.size(0)
-            correct += (pred == labels).sum().item()
-        return 100 * correct / total
+
+def evaluate(model, dataloader, device):
+    """
+    Return prediction accuracy.
+    """
+    total, correct = 0, 0
+    for data in dataloader:
+        inputs, labels = data
+        inputs, labels = inputs.to(device), labels.to(device)
+        output = model(inputs)
+        max_pred, pred = torch.max(output.data, dim=1)
+        total += labels.size(0)
+        correct += (pred == labels).sum().item()
+    return 100 * correct / total
 
 
 if __name__ == '__main__':
