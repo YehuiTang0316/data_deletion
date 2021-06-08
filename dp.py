@@ -83,7 +83,7 @@ class DPFL2(FederatedAveraging):
         self.sigma = sigma
         self.max_norm = max_norm
 
-        path = 'dp-sgd' + str(sigma) + dataset + 'iid' + '.npy' if iid else 'dp-sgd' + str(sigma) + dataset + '.npy'
+        path = 'dp-sgd' + '--' + str(sigma) + '--' + str(max_norm) + dataset + 'iid' + '.npy' if iid else 'dp-sgd' + '--' + str(sigma) + '--' + str(max_norm) + dataset + '.npy'
         self.log_dir = os.path.join(root, 'log/')
         self.log_path = os.path.join(self.log_dir, path)
 
