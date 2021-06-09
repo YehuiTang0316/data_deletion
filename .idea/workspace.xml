@@ -2,8 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d3b76a38-d8ca-41ca-9026-0c01f2f384d3" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/dp.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dp_tools/dp_optimizer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dp.py" beforeDir="false" afterPath="$PROJECT_DIR$/dp.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -15,65 +16,85 @@
     <session id="558147278">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="2" />
-          <entry key="project.open.time.0" value="1" />
+          <entry key="project.closed" value="3" />
+          <entry key="project.open.time.0" value="2" />
           <entry key="project.open.time.1" value="1" />
           <entry key="project.open.time.2" value="1" />
-          <entry key="project.opened" value="3" />
+          <entry key="project.opened" value="4" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
           <entry key="md" value="3" />
-          <entry key="py" value="27" />
+          <entry key="py" value="33" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
           <entry key="Markdown" value="3" />
-          <entry key="Python" value="27" />
+          <entry key="Python" value="33" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="md" value="1177" />
-          <entry key="py" value="6118" />
+          <entry key="py" value="9396" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="Markdown" value="1177" />
-          <entry key="Python" value="6118" />
+          <entry key="Python" value="9396" />
         </counts>
       </usages-collector>
     </session>
   </component>
   <component name="FileEditorManager">
-    <leaf>
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/federated_avg.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="586">
+              <caret line="317" column="23" lean-forward="true" selection-start-line="311" selection-start-column="8" selection-end-line="317" selection-end-column="23" />
+              <folding>
+                <element signature="e#0#39#0" expanded="true" />
+                <marker date="1622738946470" expanded="true" signature="7004:9612" ph="..." />
+                <marker date="1622738946470" expanded="true" signature="9672:9681" ph="..." />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/dp.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="731">
-              <caret line="155" column="26" lean-forward="true" selection-start-line="155" selection-start-column="26" selection-end-line="155" selection-end-column="26" />
+            <state relative-caret-position="127">
+              <caret line="250" column="41" lean-forward="true" selection-start-line="250" selection-start-column="41" selection-end-line="250" selection-end-column="41" />
               <folding>
                 <element signature="e#0#39#0" expanded="true" />
-                <marker date="1623160587154" expanded="true" signature="502:507" ph="..." />
-                <marker date="1623160587154" expanded="true" signature="1042:2207" ph="..." />
-                <marker date="1623160587154" expanded="true" signature="2573:2578" ph="..." />
+                <element signature="e#453#2536#0" />
+                <element signature="e#1049#2199#0" />
+                <element signature="e#3426#6689#0" />
+                <marker date="1623247928280" expanded="true" signature="605:610" ph="..." />
+                <marker date="1623247928280" expanded="true" signature="1143:2308" ph="..." />
+                <marker date="1623247928280" expanded="true" signature="2674:2679" ph="..." />
+                <marker date="1623247928280" expanded="true" signature="7040:10485" ph="..." />
+                <marker date="1623247928280" expanded="true" signature="7690:9029" ph="..." />
+                <marker date="1623247928280" expanded="true" signature="9075:10127" ph="..." />
+                <marker date="1623247928280" expanded="true" signature="10214:10223" ph="..." />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/federated_avg.py">
+        <entry file="file://$PROJECT_DIR$/dp_tools/dp_optimizer.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="481">
-              <caret line="358" column="68" lean-forward="true" selection-start-line="358" selection-start-column="68" selection-end-line="358" selection-end-column="75" />
+            <state relative-caret-position="561">
+              <caret line="33" column="25" lean-forward="true" selection-start-line="33" selection-start-column="25" selection-end-line="33" selection-end-column="25" />
               <folding>
-                <element signature="e#0#39#0" expanded="true" />
-                <marker date="1622738946470" expanded="true" signature="7004:9612" ph="..." />
-                <marker date="1622738946470" expanded="true" signature="9672:9681" ph="..." />
+                <element signature="e#0#12#0" expanded="true" />
+                <marker date="1623180326138" expanded="true" signature="78:83" ph="..." />
               </folding>
             </state>
           </provider>
@@ -110,15 +131,18 @@
         <option value="$PROJECT_DIR$/sisa.py" />
         <option value="$PROJECT_DIR$/tests/test_sisa.py" />
         <option value="$PROJECT_DIR$/README.md" />
+        <option value="$PROJECT_DIR$/dp_optimizer.py" />
+        <option value="$PROJECT_DIR$/dp_tools/__init__.py" />
+        <option value="$PROJECT_DIR$/dp_tools/dp_optimizer.py" />
         <option value="$PROJECT_DIR$/dp.py" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="1440" />
-    <option name="y" value="-157" />
-    <option name="width" value="960" />
-    <option name="height" value="1057" />
+  <component name="ProjectFrameBounds">
+    <option name="x" value="738" />
+    <option name="y" value="23" />
+    <option name="width" value="702" />
+    <option name="height" value="877" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
@@ -133,6 +157,11 @@
               <item name="data_deletion" type="b2602c69:ProjectViewProjectNode" />
               <item name="data_deletion" type="462c0819:PsiDirectoryNode" />
             </path>
+            <path>
+              <item name="data_deletion" type="b2602c69:ProjectViewProjectNode" />
+              <item name="data_deletion" type="462c0819:PsiDirectoryNode" />
+              <item name="dp_tools" type="462c0819:PsiDirectoryNode" />
+            </path>
           </expand>
           <select />
         </subPane>
@@ -140,7 +169,13 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
+    <property name="SearchEverywhereHistoryKey" value="&#9;FILE&#9;file:///Users/tangyehui/data_deletion/federated_avg.py" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/dp_tools" />
+    </key>
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -245,15 +280,14 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="1440" y="-157" width="1920" height="1057" extended-state="6" />
-    <editor active="true" />
+    <frame x="1440" y="-157" width="960" height="1057" extended-state="0" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.0674039" />
+      <window_info content_ui="combo" id="Project" order="0" weight="0.28328007" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.32953367" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.32953367" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -339,10 +373,29 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/dp_tools/__init__.py" />
+    <entry file="file:///anaconda3/envs/ICML/lib/python3.8/site-packages/torch/autograd/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-755">
+          <caret line="96" selection-start-line="96" selection-end-line="96" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dp_tools/dp_optimizer.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="561">
+          <caret line="33" column="25" lean-forward="true" selection-start-line="33" selection-start-column="25" selection-end-line="33" selection-end-column="25" />
+          <folding>
+            <element signature="e#0#12#0" expanded="true" />
+            <marker date="1623180326138" expanded="true" signature="78:83" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/federated_avg.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="481">
-          <caret line="358" column="68" lean-forward="true" selection-start-line="358" selection-start-column="68" selection-end-line="358" selection-end-column="75" />
+        <state relative-caret-position="586">
+          <caret line="317" column="23" lean-forward="true" selection-start-line="311" selection-start-column="8" selection-end-line="317" selection-end-column="23" />
           <folding>
             <element signature="e#0#39#0" expanded="true" />
             <marker date="1622738946470" expanded="true" signature="7004:9612" ph="..." />
@@ -353,13 +406,20 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/dp.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="731">
-          <caret line="155" column="26" lean-forward="true" selection-start-line="155" selection-start-column="26" selection-end-line="155" selection-end-column="26" />
+        <state relative-caret-position="127">
+          <caret line="250" column="41" lean-forward="true" selection-start-line="250" selection-start-column="41" selection-end-line="250" selection-end-column="41" />
           <folding>
             <element signature="e#0#39#0" expanded="true" />
-            <marker date="1623160587154" expanded="true" signature="502:507" ph="..." />
-            <marker date="1623160587154" expanded="true" signature="1042:2207" ph="..." />
-            <marker date="1623160587154" expanded="true" signature="2573:2578" ph="..." />
+            <element signature="e#453#2536#0" />
+            <element signature="e#1049#2199#0" />
+            <element signature="e#3426#6689#0" />
+            <marker date="1623247928280" expanded="true" signature="605:610" ph="..." />
+            <marker date="1623247928280" expanded="true" signature="1143:2308" ph="..." />
+            <marker date="1623247928280" expanded="true" signature="2674:2679" ph="..." />
+            <marker date="1623247928280" expanded="true" signature="7040:10485" ph="..." />
+            <marker date="1623247928280" expanded="true" signature="7690:9029" ph="..." />
+            <marker date="1623247928280" expanded="true" signature="9075:10127" ph="..." />
+            <marker date="1623247928280" expanded="true" signature="10214:10223" ph="..." />
           </folding>
         </state>
       </provider>
