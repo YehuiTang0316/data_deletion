@@ -26,11 +26,13 @@ class DPFL1(FederatedAveraging):
     """
     def __init__(self, num_clients, batch_size, sigma=1, dataset='mnist', root='./', download=False,
                  iid=False, use_gpu=True, add_to_client=True):
-        super(DPFL1, self).__init__(num_clients, batch_size)
+        super(DPFL1, self).__init__(num_clients, batch_size, dataset, root, download,
+                 iid, use_gpu)
 
         self.sigma = sigma
 
-        path = 'dp1' + str(sigma) + dataset + 'iid' + '.npy' if iid else 'dp1' + str(sigma) + dataset + '.npy'
+        path = 'dp-v1' + '-' + str(sigma) + dataset + 'iid' + '.npy' if iid else 'dp-v1' + '-' + str(sigma) + dataset\
+                                                                                 + '.npy'
         self.log_dir = os.path.join(root, 'log/')
         self.log_path = os.path.join(self.log_dir, path)
 
@@ -80,7 +82,8 @@ class DPFL2(FederatedAveraging):
     """
     def __init__(self, num_clients, batch_size, sigma=1., max_norm=1., dataset='mnist', root='./', download=False,
                  iid=False, use_gpu=True):
-        super(DPFL2, self).__init__(num_clients, batch_size)
+        super(DPFL2, self).__init__(num_clients, batch_size, dataset, root, download,
+                 iid, use_gpu)
 
         self.sigma = sigma
         self.max_norm = max_norm
@@ -175,15 +178,14 @@ class DPFL2(FederatedAveraging):
 
 
 class DPFL3(FederatedAveraging):
-    def __init__(self, num_clients, batch_size, sigma=1., max_norm=1., dataset='mnist', root='./', download=False,
+    def __init__(self, num_clients, batch_size, sigma=1., dataset='mnist', root='./', download=False,
                  iid=False, use_gpu=True):
-        super(DPFL3, self).__init__(num_clients, batch_size)
+        super(DPFL3, self).__init__(num_clients, batch_size, dataset, root, download,
+                 iid, use_gpu)
         self.sigma = sigma
-        self.max_norm = max_norm
 
-        path = 'dp-v3' + '-' + str(sigma) + '-' + str(
-            max_norm) + dataset + 'iid' + '.npy' if iid else 'dp-v3' + '-' + str(sigma) + '-' + str(
-            max_norm) + dataset + '.npy'
+        path = 'dp-v3' + '-' + str(sigma) + dataset + 'iid' + '.npy' if iid else 'dp-v3' + '-' + str(sigma) +\
+                                                                                 dataset + '.npy'
         self.log_dir = os.path.join(root, 'log/')
         self.log_path = os.path.join(self.log_dir, path)
 
@@ -213,7 +215,7 @@ class DPFL3(FederatedAveraging):
             l2_norms[key] = []
             for i in range(len(selected)):
                 gradients[i][key] = weights[i][key] - self.server_model.state_dict()[key]
-                l2_norms[key].append(torch.norm(gradients[i][key], 2))
+                l2_norms[key].append(torch.norm(gradients[i][key], 2).cpu().numpy())
 
         test_acc /= num
         print('average local train loss {:.4f}'.format(sum(train_log) / num))
@@ -265,7 +267,7 @@ class DPFL3(FederatedAveraging):
 
 
 if __name__ == '__main__':
-    sim = DPFL3(100, 10, sigma=2, max_norm=1.)
+    sim = DPFL2(100, 10, sigma=1, max_norm=4.)
     sim.train(0.2, 1, 100, lr=0.01, opt='sgd')
 
 

@@ -28,7 +28,8 @@ class Sisa(FederatedAveraging):
         fl: federated learning object
         train: train fl if true
         """
-        super(Sisa, self).__init__(num_clients, batch_size)
+        super(Sisa, self).__init__(num_clients, batch_size, dataset, root, download,
+                 iid, use_gpu)
 
         if train:
             self.train(ratio=0.2, epochs=1, rounds=100, opt='sgd', lr=0.05)
