@@ -41,7 +41,7 @@ class Sisa(FederatedAveraging):
         """
         dataset = self.training_data
 
-        ori_idxs = list(self.clients_dataset)  # idxs used in previous training
+        ori_idxs = list(self.clients_dataset[id])  # idxs used in previous training
 
         idxs_train = ori_idxs[:int(0.8 * len(ori_idxs))]
 
