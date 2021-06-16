@@ -2,10 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d3b76a38-d8ca-41ca-9026-0c01f2f384d3" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/backdoor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/draw.ipynb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/sisa.py" beforeDir="false" afterPath="$PROJECT_DIR$/sisa.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backdoor.py" beforeDir="false" afterPath="$PROJECT_DIR$/backdoor.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -41,13 +38,13 @@
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="md" value="1177" />
-          <entry key="py" value="16882" />
+          <entry key="py" value="16989" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="Markdown" value="1177" />
-          <entry key="Python" value="16882" />
+          <entry key="Python" value="16989" />
         </counts>
       </usages-collector>
     </session>
@@ -57,8 +54,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/federated_avg.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="551">
-              <caret line="309" column="45" selection-start-line="309" selection-start-column="30" selection-end-line="309" selection-end-column="45" />
+            <state relative-caret-position="433">
+              <caret line="66" column="8" selection-start-line="66" selection-start-column="8" selection-end-line="66" selection-end-column="56" />
               <folding>
                 <element signature="e#0#39#0" expanded="true" />
                 <marker date="1622738946470" expanded="true" signature="7004:9612" ph="..." />
@@ -101,8 +98,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/backdoor.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="527">
-              <caret line="326" column="33" lean-forward="true" selection-start-line="326" selection-start-column="33" selection-end-line="326" selection-end-column="33" />
+            <state relative-caret-position="560">
+              <caret line="182" column="71" lean-forward="true" selection-start-line="182" selection-start-column="71" selection-end-line="182" selection-end-column="71" />
               <folding>
                 <element signature="e#0#69#0" expanded="true" />
                 <element signature="e#872#1050#0" />
@@ -110,17 +107,17 @@
                 <element signature="e#1817#2570#0" />
                 <element signature="e#1528#1922#0" />
                 <element signature="e#2191#3640#0" />
-                <marker date="1623872197343" expanded="true" signature="644:831" ph="..." />
-                <marker date="1623872197343" expanded="true" signature="849:885" ph="..." />
-                <marker date="1623872197343" expanded="true" signature="1090:1593" ph="..." />
-                <marker date="1623872197343" expanded="true" signature="1136:1471" ph="..." />
-                <marker date="1623872197343" expanded="true" signature="1634:1639" ph="..." />
-                <marker date="1623872197343" expanded="true" signature="1895:1900" ph="..." />
-                <marker date="1623872197343" expanded="true" signature="2003:2012" ph="..." />
-                <marker date="1623872197343" expanded="true" signature="2003:6087" ph="..." />
-                <marker date="1623872197343" expanded="true" signature="7152:7153" ph="..." />
-                <marker date="1623872197343" expanded="false" signature="9338:9343" ph="..." />
-                <marker date="1623872197343" expanded="false" signature="9830:9839" ph="..." />
+                <marker date="1623875603702" expanded="true" signature="644:831" ph="..." />
+                <marker date="1623875603702" expanded="true" signature="849:885" ph="..." />
+                <marker date="1623875603702" expanded="true" signature="1090:1593" ph="..." />
+                <marker date="1623875603702" expanded="true" signature="1136:1471" ph="..." />
+                <marker date="1623875603702" expanded="true" signature="1634:1639" ph="..." />
+                <marker date="1623875603702" expanded="true" signature="1997:2002" ph="..." />
+                <marker date="1623875603702" expanded="true" signature="2105:2114" ph="..." />
+                <marker date="1623875603702" expanded="true" signature="2105:6190" ph="..." />
+                <marker date="1623875603702" expanded="true" signature="7328:7329" ph="..." />
+                <marker date="1623875603702" expanded="false" signature="9510:9515" ph="..." />
+                <marker date="1623875603702" expanded="false" signature="10002:10011" ph="..." />
               </folding>
             </state>
           </provider>
@@ -168,7 +165,7 @@
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="6">
+  <component name="ProjectFrameBounds">
     <option name="x" value="1440" />
     <option name="y" value="-157" />
     <option name="width" value="960" />
@@ -351,10 +348,10 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="1440" y="-157" width="1920" height="1057" extended-state="6" />
+    <frame x="1440" y="-157" width="960" height="1057" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.14060031" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.28434506" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -509,8 +506,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/federated_avg.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="551">
-          <caret line="309" column="45" selection-start-line="309" selection-start-column="30" selection-end-line="309" selection-end-column="45" />
+        <state relative-caret-position="433">
+          <caret line="66" column="8" selection-start-line="66" selection-start-column="8" selection-end-line="66" selection-end-column="56" />
           <folding>
             <element signature="e#0#39#0" expanded="true" />
             <marker date="1622738946470" expanded="true" signature="7004:9612" ph="..." />
@@ -521,8 +518,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/backdoor.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="527">
-          <caret line="326" column="33" lean-forward="true" selection-start-line="326" selection-start-column="33" selection-end-line="326" selection-end-column="33" />
+        <state relative-caret-position="560">
+          <caret line="182" column="71" lean-forward="true" selection-start-line="182" selection-start-column="71" selection-end-line="182" selection-end-column="71" />
           <folding>
             <element signature="e#0#69#0" expanded="true" />
             <element signature="e#872#1050#0" />
@@ -530,17 +527,17 @@
             <element signature="e#1817#2570#0" />
             <element signature="e#1528#1922#0" />
             <element signature="e#2191#3640#0" />
-            <marker date="1623872197343" expanded="true" signature="644:831" ph="..." />
-            <marker date="1623872197343" expanded="true" signature="849:885" ph="..." />
-            <marker date="1623872197343" expanded="true" signature="1090:1593" ph="..." />
-            <marker date="1623872197343" expanded="true" signature="1136:1471" ph="..." />
-            <marker date="1623872197343" expanded="true" signature="1634:1639" ph="..." />
-            <marker date="1623872197343" expanded="true" signature="1895:1900" ph="..." />
-            <marker date="1623872197343" expanded="true" signature="2003:2012" ph="..." />
-            <marker date="1623872197343" expanded="true" signature="2003:6087" ph="..." />
-            <marker date="1623872197343" expanded="true" signature="7152:7153" ph="..." />
-            <marker date="1623872197343" expanded="false" signature="9338:9343" ph="..." />
-            <marker date="1623872197343" expanded="false" signature="9830:9839" ph="..." />
+            <marker date="1623875603702" expanded="true" signature="644:831" ph="..." />
+            <marker date="1623875603702" expanded="true" signature="849:885" ph="..." />
+            <marker date="1623875603702" expanded="true" signature="1090:1593" ph="..." />
+            <marker date="1623875603702" expanded="true" signature="1136:1471" ph="..." />
+            <marker date="1623875603702" expanded="true" signature="1634:1639" ph="..." />
+            <marker date="1623875603702" expanded="true" signature="1997:2002" ph="..." />
+            <marker date="1623875603702" expanded="true" signature="2105:2114" ph="..." />
+            <marker date="1623875603702" expanded="true" signature="2105:6190" ph="..." />
+            <marker date="1623875603702" expanded="true" signature="7328:7329" ph="..." />
+            <marker date="1623875603702" expanded="false" signature="9510:9515" ph="..." />
+            <marker date="1623875603702" expanded="false" signature="10002:10011" ph="..." />
           </folding>
         </state>
       </provider>

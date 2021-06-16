@@ -94,7 +94,7 @@ class BackdoorAttack(FederatedAveraging):
 
         ano_loss = nn.CosineSimilarity(dim=0)
 
-        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.1)
+        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
         train_loss, val_loss = 0, 0
 
@@ -170,21 +170,28 @@ class BackdoorAttack(FederatedAveraging):
         test_acc = evaluate(self.clients[client_id]['model'], self.clients[client_id]['test'], self.device)
         return train_loss, val_loss, test_acc
 
-    def _create_poison_data(self, client_id, dataset, size):
+    def _create_poison_data(self, client_id, size):
         """
         :param dataset:
         :return: create poison data, like change the label 7 into 1
         """
-        idxs_poison = np.random.choice(len(dataset), size, replace=False)
+        # idxs_poison = np.random.choice(len(dataset), size, replace=False)
 
         idxs = self.clients_dataset[client_id]
         idxs_train = idxs[:int(0.8 * len(idxs))]
 
-        self.clients[client_id]['poison'] = DataLoader(PoisonDataset(dataset, idxs_poison),
+        idxs_poison = np.random.choice(idxs_train, size, replace=False)
+
+        idxs_train = list(set(idxs_train) - set(idxs_poison))
+
+        self.clients[client_id]['poison'] = DataLoader(PoisonDataset(self.training_data, idxs_poison),
                                                        batch_size=self.batch_size, shuffle=True)
 
         self.clients[client_id]['poison train'] = DataLoader(ConcatDataset(ClientDataset(self.training_data, idxs_train),
-                                                                            PoisonDataset(dataset, idxs_poison)),
+                                                                            PoisonDataset(self.training_data, idxs_poison)),
+                                                             batch_size=self.batch_size, shuffle=True)
+
+        self.clients[client_id]['clean train'] = DataLoader(ClientDataset(self.training_data, idxs_train),
                                                              batch_size=self.batch_size, shuffle=True)
 
         print('Poison dataset of size {:d} has been created.'.format(size))
@@ -211,7 +218,8 @@ class BackdoorAttack(FederatedAveraging):
 
         for client_id in client_ids:
             # poison
-            self._create_poison_data(client_id, self.test_data, size)
+            if 'poison' not in self.clients[client_id]:
+                self._create_poison_data(client_id, size)
 
             # train
             self._train_attacker(client_id, epochs2, opt, criterion, lr2, alpha, epsilon, gamma)
@@ -324,7 +332,7 @@ if __name__ == '__main__':
     # sim.verify_deletion(0)
 
     sim = BackdoorAttack(100, 10)
-    sim.attack(0.2, [0], 10, 1, 20, 'sgd', 'cross_entropy', 0.05, 0.05, 0.5, 0.1, 80)
+    sim.attack(0.2, [0], 100, 1, 20, 'sgd', 'cross_entropy', 0.05, 0.05, 0.5, 0.1, 80)
 
 
 
