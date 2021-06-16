@@ -68,6 +68,9 @@ class BackdoorAttack(FederatedAveraging):
         super(BackdoorAttack, self).__init__(num_clients, batch_size, dataset, root, download,
                  iid, use_gpu)
 
+        self.log_dir = './log/attack'
+        self.log_path = os.path.join(self.log_dir, 'backdoor')
+
     def _train_attacker(self, client_id, epochs, opt, criterion, lr, alpha, epsilon, gamma, retrain=False):
         # train attack model, difference loss function, scale up before submit
         if retrain is True:
@@ -238,10 +241,6 @@ class BackdoorAttack(FederatedAveraging):
 
         deleted_acc /= len(client_ids)
         print('test acc on poison data {:.4f}'.format(deleted_acc))
-
-
-
-
 
 
 class MIA(Sisa):
