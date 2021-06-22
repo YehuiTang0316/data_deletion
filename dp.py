@@ -189,48 +189,22 @@ class DPFL3(FederatedAveraging):
         self.log_dir = os.path.join(root, 'log/')
         self.log_path = os.path.join(self.log_dir, path)
 
-    def _train_clients(self, ratio, epochs, opt, criterion, lr):
-        num = max(1, int(ratio * self.num_clients))
-        selected = np.random.choice(self.num_clients, num, replace=False)
-
-        weights = {}
-        gradients= {}
+    def _update_server(self, weights):
+        max_norms = {}
+        updates = {}
+        w = {}
+        gradients = {}
         l2_norms = {}
-        train_log = []
-        val_log = []
-        test_acc = 0
-
-        for t, c in enumerate(selected):
-            train_loss, val_loss, acc = self._train_client(c, epochs, opt, criterion, lr)
-            train_log += [train_loss]
-            val_log += [val_loss]
-            test_acc += acc
-            weights[t] = self.clients[c]['model'].state_dict()
 
         # init
-        for i in range(len(selected)):
+        for i in weights.keys():
             gradients[i] = {}
 
         for key in weights[0].keys():
             l2_norms[key] = []
-            for i in range(len(selected)):
+            for i in weights.keys():
                 gradients[i][key] = weights[i][key] - self.server_model.state_dict()[key]
                 l2_norms[key].append(torch.norm(gradients[i][key], 2).cpu().numpy())
-
-        test_acc /= num
-        print('average local train loss {:.4f}'.format(sum(train_log) / num))
-        print('average local val loss {:.4f}'.format(sum(val_log) / num))
-        print('average local test acc {:.4f}'.format(test_acc))
-        self.log['test_local'] += [test_acc]
-        self.log['train'] += [sum(train_log) / num]
-        self.log['val'] += [sum(val_log) / num]
-
-        return gradients, l2_norms
-
-    def _update_server(self, gradients, l2_norms):
-        max_norms = {}
-        updates = {}
-        w = {}
 
         for key in gradients[0].keys():
             max_norms[key] = np.median(l2_norms[key])
@@ -257,13 +231,6 @@ class DPFL3(FederatedAveraging):
         self.log['test_global'] += [test_acc]
 
         return test_acc
-
-    def train(self, ratio, epochs, rounds, opt='adam', criterion='cross_entropy', lr=1e-4):
-        for r in range(rounds):
-            print('round {:d}'.format(r))
-            gradients, l2_norms = self._train_clients(ratio, epochs, opt, criterion, lr)
-            test_acc = self._update_server(gradients, l2_norms)
-        np.save(self.log_path, self.log)
 
 
 if __name__ == '__main__':

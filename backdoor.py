@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import copy
 import os
 import random
+import pickle
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -23,14 +24,11 @@ from sklearn.metrics import f1_score
 
 
 class PoisonDataset(Dataset):
-    def __init__(self, dataset, idxs):
-        random.seed(42)
+    def __init__(self, dataset, idxs, shuffle):
         self.dataset = dataset
         self.idxs = [int(i) for i in idxs]
 
-        self.shuffle = list(range(10))
-        random.shuffle(self.shuffle)
-        # print(self.shuffle)
+        self.shuffle = shuffle
 
     def __len__(self):
         return len(self.idxs)
@@ -63,13 +61,17 @@ class ConcatDataset(Dataset):
 
 
 class BackdoorAttack(FederatedAveraging):
-    def __init__(self,num_clients, batch_size, dataset='mnist', root='./', download=False,
+    def __init__(self, num_clients, batch_size, dataset='mnist', root='./', download=False,
                  iid=False, use_gpu=True):
         super(BackdoorAttack, self).__init__(num_clients, batch_size, dataset, root, download,
                  iid, use_gpu)
 
         self.log_dir = './log/attack'
         self.log_path = os.path.join(self.log_dir, 'backdoor')
+        self.poison_idxs = {}
+
+        for i in range(num_clients):
+            self.poison_idxs[i] = []
 
     def _train_attacker(self, client_id, epochs, opt, criterion, lr, alpha, epsilon, gamma, retrain=False):
         # train attack model, difference loss function, scale up before submit
@@ -170,38 +172,45 @@ class BackdoorAttack(FederatedAveraging):
         test_acc = evaluate(self.clients[client_id]['model'], self.clients[client_id]['test'], self.device)
         return train_loss, val_loss, test_acc
 
-    def _create_poison_data(self, client_id, size):
+    def _create_poison_data(self, client_id, size, shuffle):
         """
-        :param dataset:
-        :return: create poison data, like change the label 7 into 1
+
+        :param client_id:
+        :param size: portion of poison data
+        :param shuffle: shuffle list for label, e.g. list [0,7,2,3,4,5,6,7,8,9] changes label 1 to 7
+        :return:
         """
         # idxs_poison = np.random.choice(len(dataset), size, replace=False)
 
         idxs = self.clients_dataset[client_id]
         idxs_train = idxs[:int(0.8 * len(idxs))]
 
+        size = min(len(idxs_train), max(int(size*len(idxs_train)), 1))
+
         idxs_poison = np.random.choice(idxs_train, size, replace=False)
+        self.poison_idxs[client_id] = idxs_poison
 
         idxs_train = list(set(idxs_train) - set(idxs_poison))
 
-        self.clients[client_id]['poison'] = DataLoader(PoisonDataset(self.training_data, idxs_poison),
+        self.clients[client_id]['poison'] = DataLoader(PoisonDataset(self.training_data, idxs_poison, shuffle),
                                                        batch_size=self.batch_size, shuffle=True)
 
-        self.clients[client_id]['poison train'] = DataLoader(ConcatDataset(ClientDataset(self.training_data, idxs_train),
-                                                                            PoisonDataset(self.training_data, idxs_poison)),
+        self.clients[client_id]['poison train'] = DataLoader(ConcatDataset(ClientDataset(
+            self.training_data, idxs_train), PoisonDataset(self.training_data, idxs_poison, shuffle)),
                                                              batch_size=self.batch_size, shuffle=True)
 
-        self.clients[client_id]['clean train'] = DataLoader(ClientDataset(self.training_data, idxs_train),
+        self.clients[client_id]['train'] = DataLoader(ClientDataset(self.training_data, idxs_train),
                                                              batch_size=self.batch_size, shuffle=True)
 
         print('Poison dataset of size {:d} has been created.'.format(size))
 
-    def attack(self, ratio, client_ids, size, epochs1, epochs2, opt, criterion, lr1, lr2, alpha, epsilon, gamma):
+    def attack(self, ratio, client_ids, size, shuffle, epochs1, epochs2, opt, criterion, lr1, lr2, alpha, epsilon, gamma):
         """
         Poison attack on federated learning system.
         :param ratio: ratio of clients in communication
         :param client_ids: client that submits poison attack
         :param size: size of poison dataset
+        :param shuffle: shuffle list for label, e.g. list [0,7,2,3,4,5,6,7,8,9] changes label 1 to 7
         :param epochs1: epochs for normal clients
         :param epochs2: epochs for attacker
         :param opt: optimizer, ('sgd', 'adam')
@@ -219,36 +228,28 @@ class BackdoorAttack(FederatedAveraging):
         for client_id in client_ids:
             # poison
             if 'poison' not in self.clients[client_id]:
-                self._create_poison_data(client_id, size)
+                self._create_poison_data(client_id, size, shuffle)
 
             # train
             self._train_attacker(client_id, epochs2, opt, criterion, lr2, alpha, epsilon, gamma)
 
-        avg_w = self.clients[client_ids[0]]['model'].state_dict()
+        for client_id in client_ids:
+            tmp = len(weights)
+            weights[tmp] = self.clients[client_id]['model'].state_dict()
 
-        # update server model
-        for key in avg_w.keys():
-            for i in range(len(weights)):
-                avg_w[key] += weights[i][key]
-
-            if len(client_ids) > 1:
-                for i in range(1, len(client_ids)):
-                    avg_w[key] += self.clients[client_ids[i]]['model'].state_dict()[key]
-            avg_w[key] = torch.div(avg_w[key], len(weights) + len(client_ids))
-            self.server_model.load_state_dict(avg_w)
-
-        self.server_model.to(self.device)
-        self.server_model.eval()
-        test_acc = evaluate(self.server_model, self.test_loader, self.device)
-        print('global test acc {:.4f}'.format(test_acc))
+        self._update_server(weights)
 
         # evaluate on poison data
-        deleted_acc = 0
-        for client_id in client_ids:
-            deleted_acc += evaluate(self.server_model, self.clients[client_id]['poison'], self.device)
+        poison_acc = self.poison_accuracy(client_ids)
+        print('test acc on poison data {:.4f}'.format(poison_acc))
 
-        deleted_acc /= len(client_ids)
-        print('test acc on poison data {:.4f}'.format(deleted_acc))
+    def poison_accuracy(self, client_ids):
+        poison_acc = 0
+        for client_id in client_ids:
+            poison_acc += evaluate(self.server_model, self.clients[client_id]['poison'], self.device)
+
+        poison_acc /= len(client_ids)
+        return poison_acc
 
 
 class MIA(Sisa):
@@ -331,11 +332,55 @@ if __name__ == '__main__':
     # sim.delete(0, [0, 1, 2], 0.2, 4, 50, lr=0.05)
     # sim.verify_deletion(0)
 
+    shuffle = list(range(10))
+    random.shuffle(shuffle)
+    print(shuffle)
+
     sim = BackdoorAttack(100, 10)
-    sim.attack(0.2, [0], 100, 1, 20, 'sgd', 'cross_entropy', 0.05, 0.05, 0.5, 0.1, 80)
+    # sim.train(ratio=0.2, epochs=1, rounds=50, opt='sgd', lr=0.05)
+
+    sim.attack(ratio=0.2, client_ids=[0], size=0.4, epochs1=1, epochs2=1, shuffle=shuffle, opt='sgd', criterion='cross_entropy', lr1=0.05, lr2=0.05, alpha=0.85, epsilon=0.03, gamma=8)
+    with open('try.pkl', 'wb') as f:
+        pickle.dump(sim, f)
+
+    # attack acc vs portion
+    poison_log = []
+    portions = np.arange(0.1, 0.9, 10)
+    for p in portions:
+        with open('try.pkl', 'rb') as f:
+            sim = pickle.load(f)
+        sim.attack(ratio=0.2, client_ids=[0], size=p, epochs1=1, epochs2=1, shuffle=shuffle, opt='sgd', criterion='cross_entropy', lr1=0.05, lr2=0.05, alpha=0.85, epsilon=0.03, gamma=8)
+        poison_acc = sim.poison_accuracy([0])
+        poison_log += [poison_acc]
+
+    # attack acc vs number of attacker
+    num_attackers = np.arange(1, 100, 10)
+    for i in range(10):
+        with open('try.pkl', 'rb') as f:
+            sim = pickle.load(f)
+        clients_ids = np.random.choice(100, num_attackers[i], replace=False)
+        sim.attack(ratio=0.2, client_ids=clients_ids, size=0.8, epochs1=1, epochs2=1, shuffle=shuffle, opt='sgd', criterion='cross_entropy', lr1=0.05, lr2=0.05, alpha=0.85, epsilon=0.03, gamma=8)
+        poison_acc = sim.poison_accuracy(clients_ids)
+        poison_log += [poison_acc]
+
+    # attack vs number of communication rounds
+    cr = 50
+    with open('try.pkl', 'rb') as f:
+        sim = pickle.load(f)
+    sim.attack(ratio=0.2, client_ids=[0], size=0.4, epochs1=1, epochs2=1, shuffle=shuffle, opt='sgd',
+               criterion='cross_entropy', lr1=0.05, lr2=0.05, alpha=0.85, epsilon=0.03, gamma=8)
+    poison_acc = sim.poison_accuracy([0])
+    poison_log += [poison_acc]
+    for i in range(cr):
+        sim.train(ratio=0.2, epochs=1, rounds=100, opt='sgd', lr=0.05)
+        poison_acc = sim.poison_accuracy([0])
+        poison_log += [poison_acc]
 
 
+    # poison acc after sisa
 
+
+    # poison acc in dp-fl
 
 
 
