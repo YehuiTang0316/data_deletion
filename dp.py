@@ -234,7 +234,7 @@ class DPFL3(FederatedAveraging):
 
 
 if __name__ == '__main__':
-    sim = DPFL2(100, 10, sigma=1, max_norm=4.)
+    sim = DPFL3(100, 10, sigma=1,)
     sim.train(0.2, 1, 100, lr=0.01, opt='sgd')
 
 

@@ -37,27 +37,34 @@ class Sisa(FederatedAveraging):
     def _deletion_request(self, id, idxs):
         """
         id: the client pull deletion request
-        idxs: List, data idxs to be deleted
+        idxs: List, data idxs to be deleted; or 'poison' to delete poison data
         """
-        dataset = self.training_data
+        if idxs == 'poison':
+            if 'poison' not in self.clients[id]:
+                exit('This client has not been poisoned.')
+            else:
+                self.clients[id]['deleted'] = self.clients[id]['poison']
+                print('Poison data has been deleted.')
+        else:
+            dataset = self.training_data
 
-        ori_idxs = list(self.clients_dataset[id])  # idxs used in previous training
+            ori_idxs = list(self.clients_dataset[id])  # idxs used in previous training
 
-        idxs_train = ori_idxs[:int(0.8 * len(ori_idxs))]
+            idxs_train = ori_idxs[:int(0.8 * len(ori_idxs))]
 
-        to_be_deleted = [ori_idxs[i] for i in idxs]
+            to_be_deleted = [ori_idxs[i] for i in idxs]
 
-        idxs_train = list(set(idxs_train) - set(to_be_deleted))
+            idxs_train = list(set(idxs_train) - set(to_be_deleted))
 
-        batch_size = self.batch_size
+            batch_size = self.batch_size
 
-        self.clients[id]['train'] = DataLoader(ClientDataset(dataset, idxs_train),
-                                               batch_size=batch_size, shuffle=True)
+            self.clients[id]['train'] = DataLoader(ClientDataset(dataset, idxs_train),
+                                                   batch_size=batch_size, shuffle=True)
 
-        self.clients[id]['deleted'] = DataLoader(ClientDataset(dataset, to_be_deleted),
-                                                 batch_size=len(to_be_deleted), shuffle=False)
+            self.clients[id]['deleted'] = DataLoader(ClientDataset(dataset, to_be_deleted),
+                                                     batch_size=len(to_be_deleted), shuffle=False)
 
-        print('Request completed! Total {:d} data deleted in training set.'.format(len(to_be_deleted)))
+            print('Request completed! Total {:d} data deleted in training set.'.format(len(to_be_deleted)))
 
     def delete(self, id, idxs, ratio, epochs1, epochs2, opt='sgd', criterion='cross_entropy', lr=0.01):
         """
