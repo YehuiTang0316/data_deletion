@@ -34,6 +34,11 @@ class Sisa(FederatedAveraging):
         if train:
             self.train(ratio=0.2, epochs=1, rounds=100, opt='sgd', lr=0.05)
 
+        self.poison_idxs = {}
+
+        for i in range(num_clients):
+            self.poison_idxs[i] = []
+
     def _deletion_request(self, id, idxs):
         """
         id: the client pull deletion request
@@ -43,7 +48,8 @@ class Sisa(FederatedAveraging):
             if 'poison' not in self.clients[id]:
                 exit('This client has not been poisoned.')
             else:
-                self.clients[id]['deleted'] = self.clients[id]['poison']
+                # in deletion dataset, use the true label for poison data
+                self.clients[id]['deleted'] = ClientDataset(self.training_data, self.poison_idxs[id])
                 print('Poison data has been deleted.')
         else:
             dataset = self.training_data
@@ -85,20 +91,11 @@ class Sisa(FederatedAveraging):
 
         # retrain the client that pulled request
         train_loss, val_loss, test_acc = self._train_client(id, epochs2, opt, criterion, lr, retrain=True)
-        w1 = self.clients[id]['model'].state_dict()
 
-        avg_w = w1
-        # update server model
-        for key in avg_w.keys():
-            for i in range(len(weights)):
-                avg_w[key] += weights[i][key]
-            avg_w[key] = torch.div(avg_w[key], len(weights) + 1)
-            self.server_model.load_state_dict(avg_w)
+        tmp = len(weights)
+        weights[tmp] = self.clients[id]['model'].state_dict()
 
-        self.server_model.to(self.device)
-        self.server_model.eval()
-        test_acc = evaluate(self.server_model, self.test_loader, self.device)
-        print('global test acc {:.4f}'.format(test_acc))
+        self._update_server(weights)
 
         deleted_acc = evaluate(self.server_model, self.clients[id]['deleted'], self.device)
         print('test acc on deleted data {:.4f}'.format(deleted_acc))
