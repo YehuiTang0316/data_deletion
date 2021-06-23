@@ -64,7 +64,7 @@ class ConcatDataset(Dataset):
 class BackdoorAttack(DPFL3):
     def __init__(self, num_clients, batch_size, sigma, dataset='mnist', root='./', download=False,
                  iid=False, use_gpu=True):
-        super(BackdoorAttack, self).__init__(num_clients, sigma, batch_size, dataset, root, download,
+        super(BackdoorAttack, self).__init__(num_clients, batch_size, sigma, dataset, root, download,
                  iid, use_gpu)
 
         self.log_dir = './log/attack'
