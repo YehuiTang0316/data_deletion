@@ -16,6 +16,7 @@ import os
 import random
 
 from models import CNNMnist
+from sisa import Sisa
 from federated_avg import FederatedAveraging, evaluate
 from dp_tools.dp_optimizer import create_dp_optimizer
 
@@ -177,7 +178,7 @@ class DPFL2(FederatedAveraging):
         return train_loss, val_loss, test_acc
 
 
-class DPFL3(FederatedAveraging):
+class DPFL3(Sisa):
     def __init__(self, num_clients, batch_size, sigma=1., dataset='mnist', root='./', download=False,
                  iid=False, use_gpu=True):
         super(DPFL3, self).__init__(num_clients, batch_size, dataset, root, download,

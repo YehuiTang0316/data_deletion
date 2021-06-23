@@ -1,6 +1,7 @@
 from federated_avg import FederatedAveraging, evaluate, ClientDataset
 from sisa import Sisa
 from models import CNNMnist
+from dp import DPFL3
 
 from torchvision import transforms as T
 from torch.utils.data import DataLoader, Dataset, sampler
@@ -60,10 +61,10 @@ class ConcatDataset(Dataset):
         return len(self.dataset)
 
 
-class BackdoorAttack(Sisa):
-    def __init__(self, num_clients, batch_size, dataset='mnist', root='./', download=False,
+class BackdoorAttack(DPFL3):
+    def __init__(self, num_clients, batch_size, sigma, dataset='mnist', root='./', download=False,
                  iid=False, use_gpu=True):
-        super(BackdoorAttack, self).__init__(num_clients, batch_size, dataset, root, download,
+        super(BackdoorAttack, self).__init__(num_clients, sigma, batch_size, dataset, root, download,
                  iid, use_gpu)
 
         self.log_dir = './log/attack'
@@ -336,8 +337,8 @@ if __name__ == '__main__':
     # random.shuffle(shuffle)
     # print(shuffle)
     #
-    # sim = BackdoorAttack(100, 10)
-    # sim.train(ratio=0.2, epochs=1, rounds=50, opt='sgd', lr=0.05)
+    sim = BackdoorAttack(100, 10, 0.1)
+    sim.train(ratio=0.2, epochs=1, rounds=50, opt='sgd', lr=0.05)
 
     # sim.attack(ratio=0.2, client_ids=[0], size=0.4, epochs1=1, epochs2=1, shuffle=shuffle, opt='sgd', criterion='cross_entropy', lr1=0.05, lr2=0.05, alpha=0.85, epsilon=0.03, gamma=8)
     # with open('try.pkl', 'wb') as f:
@@ -381,19 +382,6 @@ if __name__ == '__main__':
 
 
     # poison acc in dp-fl
-
-    shuffle = [0, 7, 2, 3, 4, 5, 6, 7, 8, 9]
-    poison_log = []
-    global_acc = []
-
-    with open('try.pkl', 'rb') as f:
-        sim = pickle.load(f)
-    sim.attack(ratio=0.2, client_ids=[5], size=0.8, epochs1=1, epochs2=1, shuffle=shuffle, opt='sgd',
-               criterion='cross_entropy', lr1=0.05, lr2=0.05, alpha=0.85, epsilon=0.03, gamma=15)
-    print(sim.clients[5].keys())
-    sim.delete(5, 'poison', 0.2, 1, 20, lr=0.05)
-    print(sim.poison_accuracy([5]))
-
 
 
 
