@@ -337,8 +337,21 @@ if __name__ == '__main__':
     # random.shuffle(shuffle)
     # print(shuffle)
     #
-    sim = BackdoorAttack(100, 10, 0.1)
-    sim.train(ratio=0.2, epochs=1, rounds=50, opt='sgd', lr=0.05)
+    # sim = BackdoorAttack(100, 10, 0.1)
+    # sim.train(ratio=0.2, epochs=1, rounds=50, opt='sgd', lr=0.05)
+
+    from dp_tools import analysis
+
+    print('Achieves ({}, {})-DP'.format(
+        analysis.epsilon(
+            100,
+            20,
+            1.1,
+            100,
+            1e-3
+        ),
+        1e-3,
+    ))
 
     # sim.attack(ratio=0.2, client_ids=[0], size=0.4, epochs1=1, epochs2=1, shuffle=shuffle, opt='sgd', criterion='cross_entropy', lr1=0.05, lr2=0.05, alpha=0.85, epsilon=0.03, gamma=8)
     # with open('try.pkl', 'wb') as f:
