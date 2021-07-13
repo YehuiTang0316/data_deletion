@@ -32,11 +32,11 @@ class CNNMnist(nn.Module):
     def __init__(self):
         super(CNNMnist, self).__init__()
 
-        self.featrue_extractor = FeatureExtractor()
+        self.feature_extractor = FeatureExtractor()
         self.fc3 = nn.Linear(84, 10)
 
     def forward(self, x):
-        features = self.featrue_extractor(x)
+        features = self.feature_extractor(x)
         outputs = self.fc3(features)
         return features, outputs
 

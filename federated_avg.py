@@ -233,7 +233,7 @@ class FederatedAveraging():
                 img = img.to(self.device)
                 label = label.to(self.device)
 
-                out = self.clients[client_id]['model'](img)
+                _, out = self.clients[client_id]['model'](img)
                 optimizer.zero_grad()
                 loss = loss_fn(out, label)
                 train_loss += loss.item()
@@ -250,7 +250,7 @@ class FederatedAveraging():
                 label = label.to(self.device)
 
                 with torch.no_grad():
-                    out = self.clients[client_id]['model'](img)
+                    _, out = self.clients[client_id]['model'](img)
                     loss = loss_fn(out, label)
                     val_loss += loss.item()
 
@@ -340,7 +340,7 @@ def evaluate(model, dataloader, device):
     for data in dataloader:
         inputs, labels = data
         inputs, labels = inputs.to(device), labels.to(device)
-        output = model(inputs)
+        _, output = model(inputs)
         max_pred, pred = torch.max(output.data, dim=1)
         total += labels.size(0)
         correct += (pred == labels).sum().item()

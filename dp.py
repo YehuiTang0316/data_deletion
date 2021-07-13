@@ -148,7 +148,7 @@ class DPFL2(FederatedAveraging):
                     img = img.to(self.device)
                     label = label.to(self.device)
 
-                    out = self.clients[client_id]['model'](img)
+                    _, out = self.clients[client_id]['model'](img)
 
                     loss = loss_fn(out, label)
                     train_loss += loss.item()
@@ -166,7 +166,7 @@ class DPFL2(FederatedAveraging):
                 label = label.to(self.device)
 
                 with torch.no_grad():
-                    out = self.clients[client_id]['model'](img)
+                    _, out = self.clients[client_id]['model'](img)
                     loss = loss_fn(out, label)
                     val_loss += loss.item()
 

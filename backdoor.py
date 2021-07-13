@@ -110,7 +110,7 @@ class BackdoorAttack(DPFL3):
                 img = img.to(self.device)
                 label = label.to(self.device)
 
-                out = self.clients[client_id]['model'](img)
+                _, out = self.clients[client_id]['model'](img)
                 optimizer.zero_grad()
                 loss = alpha * loss_fn(out, label)
 
@@ -131,7 +131,7 @@ class BackdoorAttack(DPFL3):
                 label = label.to(self.device)
 
                 with torch.no_grad():
-                    out = self.clients[client_id]['model'](img)
+                    _, out = self.clients[client_id]['model'](img)
                     loss = alpha * loss_fn(out, label) + \
                            (1 - alpha) * \
                            ano_loss(
@@ -148,7 +148,7 @@ class BackdoorAttack(DPFL3):
                 label = label.to(self.device)
 
                 with torch.no_grad():
-                    out = self.clients[client_id]['model'](img)
+                    _, out = self.clients[client_id]['model'](img)
                     loss = loss_fn(out, label)
                     poison_loss += loss.item()
 
