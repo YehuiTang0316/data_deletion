@@ -94,7 +94,7 @@ class Trail(BackdoorAttack):
             val_loss /= len(self.test_loader)
             val_log += [val_loss]
 
-            if evaluate(self.server_model, self.test_loader, self.device) > 0.98:
+            if evaluate(self.server_model, self.test_loader, self.device) > 98:
                 break
 
         self.log['server'] = {'train':train_log, 'val':val_log}
@@ -207,7 +207,7 @@ class Trail(BackdoorAttack):
         epislon = analysis.epsilon(self.num_clients, 0.2*self.num_clients, self.sigma, self.communication_rounds, delta)
         print('Achieves ({}, {})-DP'.format(epislon, delta))
 
-        if test_acc >= 0.95:
+        if test_acc >= 95:
             if epislon < self.restore_epsilon:
                 self.restore_model = copy.deepcopy(self.server_model)
 
