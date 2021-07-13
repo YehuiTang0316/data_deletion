@@ -344,13 +344,13 @@ if __name__ == '__main__':
 
     print('Achieves ({}, {})-DP'.format(
         analysis.epsilon(
-            100,
-            20,
-            1.1,
-            100,
-            1e-3
+            1,
+            1,
+            10,
+            1,
+            1e-5
         ),
-        1e-3,
+        1e-5,
     ))
 
     # sim.attack(ratio=0.2, client_ids=[0], size=0.4, epochs1=1, epochs2=1, shuffle=shuffle, opt='sgd', criterion='cross_entropy', lr1=0.05, lr2=0.05, alpha=0.85, epsilon=0.03, gamma=8)

@@ -3,16 +3,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-# Lenet-5 for Mnist dataset
-class CNNMnist(nn.Module):
+class FeatureExtractor(nn.Module):
     def __init__(self):
-        super(CNNMnist, self).__init__()
-
+        super(FeatureExtractor, self).__init__()
         self.conv1 = nn.Conv2d(1, 6, 3, padding=2)
         self.conv2 = nn.Conv2d(6, 16, 3)
-        self.fc1 = nn.Linear(16*6*6, 120)
+        self.fc1 = nn.Linear(16 * 6 * 6, 120)
         self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
 
     def forward(self, x):
         x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))
@@ -20,15 +17,28 @@ class CNNMnist(nn.Module):
         x = x.view(-1, self.num_flat_features(x))
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        x = self.fc3(x)
         return x
 
-    def num_flat_features(self,x):
+    def num_flat_features(self, x):
         size = x.size()[1:]
         num_features = 1
         for s in size:
             num_features *= s
         return num_features
+
+
+# Lenet-5 for Mnist dataset
+class CNNMnist(nn.Module):
+    def __init__(self):
+        super(CNNMnist, self).__init__()
+
+        self.featrue_extractor = FeatureExtractor()
+        self.fc3 = nn.Linear(84, 10)
+
+    def forward(self, x):
+        features = self.featrue_extractor(x)
+        outputs = self.fc3(features)
+        return features, outputs
 
 
 if __name__ == '__main__':
