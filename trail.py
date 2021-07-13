@@ -143,7 +143,7 @@ class Trail(BackdoorAttack):
                 img = img.to(self.device)
                 label = label.to(self.device)
 
-                out = self.clients[client_id]['model'](img)
+                _, out = self.clients[client_id]['model'](img)
                 optimizer.zero_grad()
                 loss = loss_fn(out, label)
                 train_loss += loss.item()
@@ -160,7 +160,7 @@ class Trail(BackdoorAttack):
                 label = label.to(self.device)
 
                 with torch.no_grad():
-                    out = self.clients[client_id]['model'](img)
+                    _, out = self.clients[client_id]['model'](img)
                     loss = loss_fn(out, label)
                     val_loss += loss.item()
 
