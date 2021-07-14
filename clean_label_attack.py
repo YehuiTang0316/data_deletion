@@ -45,9 +45,8 @@ class CleanLabelAttack(Trail):
                 if labels[i].item() == 1:
                     base_instance = imgs[i].unsqueeze(0).to(self.device)
 
-                if target_instance is None:
-                    if labels[i].item() == 7:
-                        target_instance = imgs[i].unsqueeze(0).to(self.device)
+                elif labels[i].item() == 7:
+                    target_instance = imgs[i].unsqueeze(0).to(self.device)
 
         mean_tensor = torch.from_numpy(np.array((0.1307,)))
         std_tensor = torch.from_numpy(np.array((0.3081,)))
@@ -62,17 +61,22 @@ class CleanLabelAttack(Trail):
 
         perturbed_instance = unnormalized_base_instance.clone()
 
-        model = copy.deepcopy(self.clients[client_id]['model'])
+        model = copy.deepcopy(self.server_model)
 
         model.train()
         model.feature_extractor.eval()
 
         target_features, outputs = model(target_instance)
 
-        def transforms_normalization(instance):
-            instance[:, 0, :, :] -= mean_tensor[0]
-            instance[:, 0, :, 0] /= std_tensor[0]
-            return instance
+        # def transforms_normalization(instance):
+        #     with torch.no_grad():
+        #         instance[:, 0, :, :] -= mean_tensor[0]
+        #         instance[:, 0, :, 0] /= std_tensor[0]
+        #     return instance
+
+        transforms_normalization = transforms.Compose([
+            transforms.Normalize((0.1307,), (0.3081,))
+        ])
 
         epsilon = 16 / 255
         alpha = 0.05 / 255
@@ -80,9 +84,10 @@ class CleanLabelAttack(Trail):
         start_time = time.time()
 
         for i in range(5000):
-            poison_instance = transforms_normalization(perturbed_instance)
-
             perturbed_instance.requires_grad = True
+
+            poison_instance = transforms_normalization(perturbed_instance.squeeze(0)).unsqueeze(0)
+            perturbed_instance.unsqueeze(0)
 
             poison_features, _ = model(poison_instance)
 
@@ -100,7 +105,8 @@ class CleanLabelAttack(Trail):
             if i == 0 or (i + 1) % 500 == 0:
                 print(f'Feature loss: {feature_loss}, Image loss: {image_loss}, Time: {time.time() - start_time}')
 
-            poison_instance = transforms_normalization(perturbed_instance)
+            poison_instance = transforms_normalization(perturbed_instance.squeeze(0)).unsqueeze(0)
+            perturbed_instance.unsqueeze(0)
 
         poison_dataset = PoisonDataset(poison_instance, 1)
 
@@ -122,11 +128,11 @@ class CleanLabelAttack(Trail):
     def attack_target_prediction(self):
         _, out = self.server_model(self.target_instance)
         percentages = nn.Softmax(dim=1)(out)[0]
-        print(f'[Predicted Confidence] digit 1: {percentages[0]} | digit 7: {percentages[1]}')
+        print(f'[Predicted Confidence] digit 1: {percentages[1]} | digit 7: {percentages[7]}')
 
 
 if __name__ == '__main__':
-    sim = CleanLabelAttack(100, 10, 0.1)
+    sim = CleanLabelAttack(100, 10, 1.1)
     sim.attack(ratio=0.2, client_ids=[0], size=0.4, epochs1=1, epochs2=1, shuffle=None, opt='sgd', criterion='cross_entropy', lr1=0.05, lr2=0.05, alpha=0.85, epsilon=0.03, gamma=8)
     sim.attack_target_prediction()
 

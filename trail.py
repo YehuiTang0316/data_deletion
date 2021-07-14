@@ -57,7 +57,7 @@ class Trail(BackdoorAttack):
         loss_fn = nn.CrossEntropyLoss()
 
         train_log, val_log = [], []
-        epochs = 20
+        epochs = 40
 
         print("training server model.")
         for epoch in range(epochs):
