@@ -106,6 +106,7 @@ class BackdoorAttack(DPFL3):
             # train
             train_loss = 0
             self.clients[client_id]['model'].train()
+            self.clients[client_id]['model'].feature_extractor.eval()
             for i, (img, label) in enumerate(self.clients[client_id]['poison train']):
                 img = img.to(self.device)
                 label = label.to(self.device)
