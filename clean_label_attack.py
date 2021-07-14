@@ -108,7 +108,7 @@ class CleanLabelAttack(Trail):
             poison_instance = transforms_normalization(perturbed_instance.squeeze(0)).unsqueeze(0)
             perturbed_instance.unsqueeze(0)
 
-        poison_dataset = PoisonDataset(poison_instance, 1)
+        poison_dataset = PoisonDataset(poison_instance.cpu(), 1)
 
         idxs = self.clients_dataset[client_id]
         idxs_train = idxs[:int(0.8 * len(idxs))]
