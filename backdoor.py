@@ -97,7 +97,7 @@ class BackdoorAttack(DPFL3):
 
         ano_loss = nn.CosineSimilarity(dim=0)
 
-        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+        # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
         train_loss, val_loss = 0, 0
 
@@ -120,7 +120,7 @@ class BackdoorAttack(DPFL3):
                 train_loss += loss.item()
                 loss.backward()
                 optimizer.step()
-            scheduler.step()
+            # scheduler.step()
 
             # print('local epoch {:d}, train loss {:.4f}'.format(epoch, train_loss/len(self.clients[c]['train'])))
 
@@ -143,21 +143,21 @@ class BackdoorAttack(DPFL3):
             # print('local epoch {:d}, val loss {:.4f}'.format(epoch, val_loss/len(self.clients[c]['val'])))
 
             # check if loss on poison data satisfy stop condition
-            poison_loss = 0
-            for i, (img, label) in enumerate(self.clients[client_id]['poison']):
-                img = img.to(self.device)
-                label = label.to(self.device)
+            # poison_loss = 0
+            # for i, (img, label) in enumerate(self.clients[client_id]['poison']):
+            #     img = img.to(self.device)
+            #     label = label.to(self.device)
+            #
+            #     with torch.no_grad():
+            #         _, out = self.clients[client_id]['model'](img)
+            #         loss = loss_fn(out, label)
+            #         poison_loss += loss.item()
+            #
+            # poison_loss /= len(self.clients[client_id]['poison'])
+            # if poison_loss < epsilon:
+            #     break
 
-                with torch.no_grad():
-                    _, out = self.clients[client_id]['model'](img)
-                    loss = loss_fn(out, label)
-                    poison_loss += loss.item()
-
-            poison_loss /= len(self.clients[client_id]['poison'])
-            if poison_loss < epsilon:
-                break
-
-            print('loss on poison data {:.3f}'.format(poison_loss))
+            # print('loss on poison data {:.3f}'.format(poison_loss))
 
 
         # scale up model

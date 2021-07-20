@@ -9,7 +9,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset, sampler
 
-import torchvision
+from torchvision.utils import save_image
 from torchvision import datasets, models, transforms
 
 from backdoor import BackdoorAttack, ConcatDataset, ClientDataset
@@ -48,6 +48,9 @@ class CleanLabelAttack(Trail):
                 elif labels[i].item() == 7:
                     target_instance = imgs[i].unsqueeze(0).to(self.device)
 
+                if base_instance is not None and target_instance is not None:
+                    break
+
         mean_tensor = torch.from_numpy(np.array((0.1307,)))
         std_tensor = torch.from_numpy(np.array((0.3081,)))
 
@@ -67,46 +70,54 @@ class CleanLabelAttack(Trail):
         model.feature_extractor.eval()
 
         target_features, outputs = model(target_instance)
-
-        # def transforms_normalization(instance):
-        #     with torch.no_grad():
-        #         instance[:, 0, :, :] -= mean_tensor[0]
-        #         instance[:, 0, :, 0] /= std_tensor[0]
-        #     return instance
+        target_features = target_features.detach()
 
         transforms_normalization = transforms.Compose([
             transforms.Normalize((0.1307,), (0.3081,))
         ])
 
-        epsilon = 16 / 255
-        alpha = 0.05 / 255
+        epsilon = 1
+        alpha = 0.1
+        # beta = 0.25 * (84/(28*28))**2
+        beta = 8e-3
 
         start_time = time.time()
 
-        for i in range(5000):
+        for i in range(1000):
             perturbed_instance.requires_grad = True
 
-            poison_instance = transforms_normalization(perturbed_instance.squeeze(0)).unsqueeze(0)
-            perturbed_instance.unsqueeze(0)
+            poison_instance = transforms_normalization(perturbed_instance[0]).unsqueeze(0)
+            # perturbed_instance.unsqueeze(0)
 
             poison_features, _ = model(poison_instance)
 
+            model.zero_grad()
+
             feature_loss = nn.MSELoss()(poison_features, target_features)
             image_loss = nn.MSELoss()(poison_instance, base_instance)
-            loss = feature_loss + image_loss / 1e2
-            loss.backward(retain_graph=True)
+            loss = feature_loss + beta*image_loss
+            loss.backward()
 
-            signed_gradient = perturbed_instance.grad.sign()
+            # signed_gradient = perturbed_instance.grad.sign()
+            #
+            # perturbed_instance = perturbed_instance - alpha * signed_gradient
+            # eta = torch.clamp(perturbed_instance - unnormalized_base_instance, -epsilon, epsilon)
+            # perturbed_instance = torch.clamp(unnormalized_base_instance + eta, 0, 1).detach()
 
-            perturbed_instance = perturbed_instance - alpha * signed_gradient
-            eta = torch.clamp(perturbed_instance - unnormalized_base_instance, -epsilon, epsilon)
-            perturbed_instance = torch.clamp(unnormalized_base_instance + eta, 0, 1).detach()
+            with torch.no_grad():
+                perturbed_instance = perturbed_instance - alpha * perturbed_instance.grad
+
+                perturbed_instance = (perturbed_instance + alpha*beta*unnormalized_base_instance) / (1+alpha*beta)
+            # eta = torch.clamp(perturbed_instance - unnormalized_base_instance, -epsilon, epsilon)
+            # perturbed_instance = torch.clamp(unnormalized_base_instance + eta, 0, 1).detach()
+                perturbed_instance = torch.clamp(perturbed_instance, -epsilon, epsilon)
+            # perturbed_instance = perturbed_instance.detach()
 
             if i == 0 or (i + 1) % 500 == 0:
                 print(f'Feature loss: {feature_loss}, Image loss: {image_loss}, Time: {time.time() - start_time}')
 
-            poison_instance = transforms_normalization(perturbed_instance.squeeze(0)).unsqueeze(0)
-            perturbed_instance.unsqueeze(0)
+        poison_instance = transforms_normalization(perturbed_instance[0]).unsqueeze(0)
+        # perturbed_instance.unsqueeze(0)
 
         poison_dataset = PoisonDataset(poison_instance.cpu(), 1)
 
@@ -132,9 +143,14 @@ class CleanLabelAttack(Trail):
 
 
 if __name__ == '__main__':
+    np.random.seed(42)
+    torch.manual_seed(42)
     sim = CleanLabelAttack(100, 10, 1.1)
-    sim.attack(ratio=0.2, client_ids=[0], size=0.4, epochs1=1, epochs2=1, shuffle=None, opt='sgd', criterion='cross_entropy', lr1=0.05, lr2=0.05, alpha=0.85, epsilon=0.03, gamma=8)
+    sim.attack(ratio=0.2, client_ids=[0], size=0.4, epochs1=1, epochs2=100, shuffle=None, opt='sgd', criterion='cross_entropy', lr1=0.005, lr2=0.01, alpha=0.85, epsilon=0.03, gamma=20)
     sim.attack_target_prediction()
 
-
+    _, out = sim.clients[0]['model'](sim.target_instance)
+    percentages = nn.Softmax(dim=1)(out)[0]
+    print(f'[Predicted Confidence] digit 1: {percentages[1]} | digit 7: {percentages[7]}')
+    print(percentages)
 
