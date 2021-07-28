@@ -45,8 +45,12 @@ class Sisa(FederatedAveraging):
                 exit('This client has not been poisoned.')
             else:
                 # in deletion dataset, use the true label for poison data
-                self.clients[id]['deleted'] = DataLoader(ClientDataset(self.training_data, self.poison_idxs[id]),
-                                                         batch_size=self.batch_size, shuffle=False)
+                if self.poison_idxs[id]:
+                    self.clients[id]['deleted'] = DataLoader(ClientDataset(self.training_data, self.poison_idxs[id]),
+                                                             batch_size=self.batch_size, shuffle=False)
+                else:
+                    self.clients[id]['deleted'] = self.clients[id]['poison']
+
                 print('Poison data has been deleted.')
         else:
             dataset = self.training_data

@@ -225,7 +225,8 @@ class BackdoorAttack(DPFL3):
         :return:
         """
         # deviate other clients from server
-        weights = self._train_clients(ratio, epochs1, opt, criterion, lr1)
+        # weights = self._train_clients(ratio, epochs1, opt, criterion, lr1)
+        weights = {}
 
         for client_id in client_ids:
             # poison

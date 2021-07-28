@@ -24,7 +24,7 @@ import pickle
 
 class Trail(BackdoorAttack):
     def __init__(self, num_clients, batch_size, sigma, dataset='mnist', root='./', download=False,
-                 iid=False, use_gpu=True):
+                 iid=False, use_gpu=True, pretrain=True):
         super(BackdoorAttack, self).__init__(num_clients, batch_size, sigma, dataset, root, download,
                                              iid, use_gpu)
 
@@ -35,20 +35,26 @@ class Trail(BackdoorAttack):
         self.communication_rounds = 0
         self.restore_epsilon = 5
 
-        self._create_server_training()
-        self._train_server()
+        if pretrain:
+            self._create_server_training()
+            self._train_server()
 
     def _create_server_training(self):
-        total = len(self.test_data)
-        idxs = np.random.choice(total, total//2)
+        # total = len(self.test_data)
+        # idxs = np.random.choice(total, total//2)
+        #
+        # idxs_test = list(set(list(range(total))) - set(idxs))
+        #
+        # self.test_loader = DataLoader(ClientDataset(self.test_data, idxs_test),
+        #                               batch_size=int(len(self.test_data) / 10), shuffle=False)
+        #
+        # self.server_training = DataLoader(ClientDataset(self.test_data, idxs),
+        #                                   batch_size=int(len(self.test_data) / 10), shuffle=False)
 
-        idxs_test = list(set(list(range(total))) - set(idxs))
+        total = len(self.training_data)
+        idxs = np.random.choice(total, 10000)
 
-        self.test_loader = DataLoader(ClientDataset(self.test_data, idxs_test),
-                                      batch_size=int(len(self.test_data) / 10), shuffle=False)
-
-        self.server_training = DataLoader(ClientDataset(self.test_data, idxs),
-                                          batch_size=int(len(self.test_data) / 10), shuffle=False)
+        self.server_training = DataLoader(ClientDataset(self.training_data, idxs), batch_size=128, shuffle=True)
 
         print("Distributed {:d} non-sensitive data to training on server.".format(len(idxs)))
 
@@ -98,6 +104,7 @@ class Trail(BackdoorAttack):
                 break
 
         self.log['server'] = {'train':train_log, 'val':val_log}
+        self.log['achieve'] = (float('inf'), None, None)
 
         self.restore_model = copy.deepcopy(self.server_model)
 
@@ -188,15 +195,39 @@ class Trail(BackdoorAttack):
         """
         self.communication_rounds += 1
 
-        avg_w = weights[0]
-        if len(weights) == 1:
-            self.server_model.load_state_dict(avg_w)
-        else:
-            for key in avg_w.keys():
-                for i in range(1, len(weights)):
-                    avg_w[key] += weights[i][key]
-                avg_w[key] = torch.div(avg_w[key], len(weights))
-            self.server_model.load_state_dict(avg_w)
+        max_norms = {}
+        updates = {}
+        w = {}
+        gradients = {}
+        l2_norms = {}
+
+        # init
+        for i in weights.keys():
+            gradients[i] = {}
+
+        for key in weights[0].keys():
+            l2_norms[key] = []
+            for i in weights.keys():
+                gradients[i][key] = weights[i][key] - self.server_model.state_dict()[key]
+                l2_norms[key].append(torch.norm(gradients[i][key], 2).cpu().numpy())
+
+        for key in gradients[0].keys():
+            max_norms[key] = np.median(l2_norms[key])
+            coeff = l2_norms[key] / max_norms[key]
+
+            for i in range(len(gradients)):
+                if i == 0:
+                    updates[key] = torch.div(gradients[i][key], max(1, coeff[i]))
+                else:
+                    updates[key] += torch.div(gradients[i][key], max(1, coeff[i]))
+
+            # add noise
+            updates[key] += torch.randn_like(updates[key]) * self.sigma * max_norms[key]
+            updates[key] = torch.div(updates[key], len(gradients))
+
+            w[key] = self.server_model.state_dict()[key] + updates[key]
+
+        self.server_model.load_state_dict(w)
 
         self.server_model.to(self.device)
         self.server_model.eval()
@@ -204,14 +235,17 @@ class Trail(BackdoorAttack):
         print('global test acc {:.4f}'.format(test_acc))
 
         delta = 1e-3
-        epislon = analysis.epsilon(self.num_clients, 0.2*self.num_clients, self.sigma, self.communication_rounds, delta)
-        print('Achieves ({}, {})-DP'.format(epislon, delta))
+        epsilon = analysis.epsilon(self.num_clients, 0.2*self.num_clients, self.sigma, self.communication_rounds, delta)
+        print('Achieves ({}, {})-DP'.format(epsilon, delta))
 
         if test_acc >= 95:
-            if epislon < self.restore_epsilon:
+            if epsilon < self.restore_epsilon:
                 self.restore_model = copy.deepcopy(self.server_model)
 
         self.log['test_global'] += [test_acc]
+
+        if test_acc >= 93 and self.log['achieve'][0] >= self.communication_rounds:
+            self.log['achieve'] = (self.communication_rounds, epsilon, delta)
 
         return test_acc
 

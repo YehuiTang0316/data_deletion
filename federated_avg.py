@@ -344,6 +344,8 @@ def evaluate(model, dataloader, device):
         max_pred, pred = torch.max(output.data, dim=1)
         total += labels.size(0)
         correct += (pred == labels).sum().item()
+    if total == 0:
+        total += 1e-5
     return 100 * correct / total
 
 
