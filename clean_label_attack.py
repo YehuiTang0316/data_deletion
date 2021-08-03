@@ -31,9 +31,9 @@ class PoisonDataset(Dataset):
 
 class CleanLabelAttack(Trail):
     def __init__(self, num_clients, batch_size, sigma, dataset='mnist', root='./', download=False,
-                 iid=False, use_gpu=True, pretrain=True):
+                 iid=False, use_gpu=True, pretrain=True, use_dp=True):
         super(CleanLabelAttack, self).__init__(num_clients, batch_size, sigma, dataset, root, download,
-                 iid, use_gpu, pretrain)
+                 iid, use_gpu, pretrain, use_dp)
 
     def _create_poison_data(self, client_id, size, shuffle=None):
         base_instance = None
@@ -148,17 +148,17 @@ if __name__ == '__main__':
 
     np.random.seed(42)
     torch.manual_seed(42)
-    # sim = CleanLabelAttack(100, 10, 4)
-    # sim.train(ratio=0.2, epochs=1, rounds=1, opt='sgd', lr=0.005)
+    sim = CleanLabelAttack(100, 10, 0.0001, use_dp=True)
+    sim.train(ratio=0.2, epochs=1, rounds=1, opt='sgd', lr=0.005)
 
     # with open('4_cla.pkl', 'wb') as f:
     #     pickle.dump(sim, f)
 
-    with open('2_cla.pkl', 'rb') as f:
-        sim = pickle.load(f)
+    # with open('2_cla.pkl', 'rb') as f:
+    #     sim = pickle.load(f)
     print(evaluate(sim.server_model, sim.test_loader, sim.device))
     # a = list(np.random.choice(100, 20))
-    sim.attack(ratio=0.01, client_ids=[0,1,2,3], size=0.4, epochs1=1, epochs2=100, shuffle=None, opt='sgd', criterion='cross_entropy', lr1=0.005, lr2=0.01, alpha=0.85, epsilon=0.03, gamma=1)
+    sim.attack(ratio=0.01, client_ids=[0,1,2,3,4], size=0.4, epochs1=1, epochs2=100, shuffle=None, opt='sgd', criterion='cross_entropy', lr1=0.005, lr2=0.01, alpha=0.85, epsilon=0.03, gamma=1)
     sim.attack_target_prediction()
 
     _, out = sim.clients[0]['model'](sim.target_instance)
@@ -166,8 +166,10 @@ if __name__ == '__main__':
     print(f'[Predicted Confidence] digit 1: {percentages[1]} | digit 7: {percentages[7]}')
     print(percentages)
 
+    print(evaluate(sim.clients[0]['model'], sim.test_loader, sim.device))
+    print(evaluate(sim.clients[0]['model'], sim.clients[0]['test'], sim.device))
     print('deleted')
-    sim.delete(0, 'poison', 0.2, 1, 1, lr=0.005)
+    sim.delete(0, 'poison', 0.6, 1, 1, lr=0.0001)
     sim.attack_target_prediction()
 
 

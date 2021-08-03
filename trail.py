@@ -24,7 +24,7 @@ import pickle
 
 class Trail(BackdoorAttack):
     def __init__(self, num_clients, batch_size, sigma, dataset='mnist', root='./', download=False,
-                 iid=False, use_gpu=True, pretrain=True):
+                 iid=False, use_gpu=True, pretrain=True, use_dp=True):
         super(BackdoorAttack, self).__init__(num_clients, batch_size, sigma, dataset, root, download,
                                              iid, use_gpu)
 
@@ -34,6 +34,7 @@ class Trail(BackdoorAttack):
         self.restore_model = None
         self.communication_rounds = 0
         self.restore_epsilon = 5
+        self.use_dp = use_dp
 
         if pretrain:
             self._create_server_training()
@@ -201,31 +202,42 @@ class Trail(BackdoorAttack):
         gradients = {}
         l2_norms = {}
 
-        # init
-        for i in weights.keys():
-            gradients[i] = {}
-
-        for key in weights[0].keys():
-            l2_norms[key] = []
+        if self.use_dp:
+            # init, if use dp, clip norm and add noise
             for i in weights.keys():
-                gradients[i][key] = weights[i][key] - self.server_model.state_dict()[key]
-                l2_norms[key].append(torch.norm(gradients[i][key], 2).cpu().numpy())
+                gradients[i] = {}
 
-        for key in gradients[0].keys():
-            max_norms[key] = np.median(l2_norms[key])
-            coeff = l2_norms[key] / max_norms[key]
+            for key in weights[0].keys():
+                l2_norms[key] = []
+                for i in weights.keys():
+                    gradients[i][key] = weights[i][key] - self.server_model.state_dict()[key]
+                    l2_norms[key].append(torch.norm(gradients[i][key], 2).cpu().numpy())
 
-            for i in range(len(gradients)):
-                if i == 0:
-                    updates[key] = torch.div(gradients[i][key], max(1, coeff[i]))
-                else:
-                    updates[key] += torch.div(gradients[i][key], max(1, coeff[i]))
+            for key in gradients[0].keys():
+                max_norms[key] = np.median(l2_norms[key])
+                coeff = l2_norms[key] / max_norms[key]
+
+                for i in range(len(gradients)):
+                    if i == 0:
+                        updates[key] = torch.div(gradients[i][key], max(1, coeff[i]))
+                    else:
+                        updates[key] += torch.div(gradients[i][key], max(1, coeff[i]))
 
             # add noise
-            updates[key] += torch.randn_like(updates[key]) * self.sigma * max_norms[key]
-            updates[key] = torch.div(updates[key], len(gradients))
+                updates[key] += torch.randn_like(updates[key]) * self.sigma * max_norms[key]
+                updates[key] = torch.div(updates[key], len(gradients))
 
-            w[key] = self.server_model.state_dict()[key] + updates[key]
+                w[key] = self.server_model.state_dict()[key] + updates[key]
+
+        else:
+            w = weights[0]
+            if len(weights) == 1:
+                self.server_model.load_state_dict(w)
+            else:
+                for key in w.keys():
+                    for i in range(1, len(weights)):
+                        w[key] += weights[i][key]
+                    w[key] = torch.div(w[key], len(weights))
 
         self.server_model.load_state_dict(w)
 
@@ -234,18 +246,23 @@ class Trail(BackdoorAttack):
         test_acc = evaluate(self.server_model, self.test_loader, self.device)
         print('global test acc {:.4f}'.format(test_acc))
 
-        delta = 1e-3
-        epsilon = analysis.epsilon(self.num_clients, 0.2*self.num_clients, self.sigma, self.communication_rounds, delta)
-        print('Achieves ({}, {})-DP'.format(epsilon, delta))
+        if self.use_dp:
+            delta = 1e-3
+            epsilon = analysis.epsilon(self.num_clients, 0.2*self.num_clients, self.sigma, self.communication_rounds, delta)
+            print('Achieves ({}, {})-DP'.format(epsilon, delta))
 
         if test_acc >= 95:
-            if epsilon < self.restore_epsilon:
+            if self.use_dp:
+                if epsilon < self.restore_epsilon:
+                    self.restore_model = copy.deepcopy(self.server_model)
+            else:
                 self.restore_model = copy.deepcopy(self.server_model)
 
         self.log['test_global'] += [test_acc]
 
-        if test_acc >= 93 and self.log['achieve'][0] >= self.communication_rounds:
-            self.log['achieve'] = (self.communication_rounds, epsilon, delta)
+        if self.use_dp:
+            if test_acc >= 93 and self.log['achieve'][0] >= self.communication_rounds:
+                self.log['achieve'] = (self.communication_rounds, epsilon, delta)
 
         return test_acc
 
