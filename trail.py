@@ -64,14 +64,14 @@ class Trail(BackdoorAttack):
 
     def _train_server(self):
         optimizer = optim.SGD(self.server_model.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
-        scheduler = CyclicLR(optimizer, base_lr=0.0001, max_lr=0.1, step_size_up=10000, step_size_down=10000,
-                             mode='triangular')
-        #
-        # scheduler = CosineAnnealingLR(optimizer, T_max=200)
+        # scheduler = CyclicLR(optimizer, base_lr=0.0001, max_lr=0.1, step_size_up=10000, step_size_down=10000,
+        #                      mode='triangular')
+
+        scheduler = CosineAnnealingLR(optimizer, T_max=200)
         loss_fn = nn.CrossEntropyLoss()
 
         train_log, val_log = [], []
-        epochs = 1
+        epochs = 40
 
         print("training server model.")
         for epoch in range(epochs):
