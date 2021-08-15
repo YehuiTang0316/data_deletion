@@ -240,6 +240,11 @@ class BackdoorAttack(DPFL3):
             tmp = len(weights)
             weights[tmp] = self.clients[client_id]['model'].state_dict()
 
+        # other_weights = self._train_clients(ratio, epochs1, opt, criterion, lr1)
+        # for key in other_weights:
+        #     tmp = len(weights)
+        #     weights[tmp] = other_weights[key]
+
         self._update_server(weights)
 
         # evaluate on poison data

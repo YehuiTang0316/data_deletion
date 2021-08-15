@@ -36,6 +36,8 @@ class Trail(BackdoorAttack):
         self.restore_epsilon = 5
         self.use_dp = use_dp
 
+        self.pretrain = pretrain
+
         if pretrain:
             self._create_server_training()
             self._train_server()
@@ -121,7 +123,7 @@ class Trail(BackdoorAttack):
         :return:
         """
         if retrain is True:
-            self.clients[client_id]['model'] = self.restore_model
+            self.clients[client_id]['model'] = self.restore_model if self.pretrain else self.architecture
         else:
             self.clients[client_id]['model'] = copy.deepcopy(self.server_model)
 

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision.models import resnet18
 
 
 class FeatureExtractor(nn.Module):
@@ -41,6 +42,70 @@ class CNNMnist(nn.Module):
         return features, outputs
 
 
+class FTCifar10(nn.Module):
+    def __init__(self):
+        super(FTCifar10, self).__init__()
+        self.conv1 = nn.Conv2d(3, 6, 5)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(6, 16, 5)
+        self.fc1 = nn.Linear(16 * 5 * 5, 120)
+        self.fc2 = nn.Linear(120, 84)
+
+    def forward(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = torch.flatten(x, 1)  # flatten all dimensions except batch
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+
+        return x
+
+
+class Cifar10CnnModel(nn.Module):
+    def __init__(self):
+        super(Cifar10CnnModel, self).__init__()
+        self.ft = FTCifar10()
+        self.fc3 = nn.Linear(84, 10)
+
+    def forward(self, x):
+        features = self.ft(x)
+        output = self.fc3(features)
+        return features, output
+
+
+class Cifar10ResNet(nn.Module):
+    def __init__(self):
+        super(Cifar10ResNet, self).__init__()
+
+        # load a pre-trained model for the feature extractor
+        self.feature_extractor = nn.Sequential(*list(resnet18(pretrained=True).children())[:-1]).eval()
+        self.fc = nn.Linear(512, 10)
+
+        # fix the pre-trained network
+        for param in self.feature_extractor.parameters():
+            param.requires_grad = False
+
+    def forward(self, images):
+        features = self.feature_extractor(images)
+        x = torch.flatten(features, 1)
+        outputs = self.fc(x)
+        return features, outputs
+
+
+def imshow(input, title):
+    # torch.Tensor => numpy
+    input = input.numpy().transpose((1, 2, 0))
+    # undo image normalization
+    mean = np.array([0.485, 0.456, 0.406])
+    std = np.array([0.229, 0.224, 0.225])
+    input = std * input + mean
+    input = np.clip(input, 0, 1)
+    # display images
+    plt.imshow(input)
+    plt.title(title)
+    plt.show()
+
+
 if __name__ == '__main__':
     # centralized training, provides benchmark
     from torchvision import transforms as T
@@ -57,17 +122,22 @@ if __name__ == '__main__':
         T.Normalize((0.1307,), (0.3081,)),
     ])
 
+    cifar10_transforms = T.Compose([
+        T.ToTensor(),
+        T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+    ])
+
     data_dir = './dataset'
     batch_size = 128
-    num_train = 55000
+    num_train = 45000
 
-    mnist_train = dset.MNIST(data_dir, train=True, transform=transforms, download=True)
-    mnist_val = dset.MNIST(data_dir, train=True, transform=transforms, download=True)
-    mnist_test = dset.MNIST(data_dir, train=False, transform=transforms, download=True)
+    mnist_train = dset.CIFAR10(data_dir, train=True, transform=cifar10_transforms, download=True)
+    mnist_val = dset.CIFAR10(data_dir, train=True, transform=cifar10_transforms, download=True)
+    mnist_test = dset.CIFAR10(data_dir, train=False, transform=cifar10_transforms, download=True)
 
     loader_train = DataLoader(mnist_train, batch_size=batch_size, sampler=sampler.SubsetRandomSampler(range(num_train)))
     loader_val = DataLoader(mnist_val, batch_size=batch_size,
-                            sampler=sampler.SubsetRandomSampler(range(num_train, 60000)))
+                            sampler=sampler.SubsetRandomSampler(range(num_train, 50000)))
     loader_test = DataLoader(mnist_test, batch_size=batch_size)
 
     use_gpu = True
@@ -90,7 +160,7 @@ if __name__ == '__main__':
         return 100 * correct / total
 
 
-    model = CNNMnist().to(device)
+    model = Cifar10ResNet().to(device)
     optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
     criterion = nn.CrossEntropyLoss()
 
@@ -110,6 +180,7 @@ if __name__ == '__main__':
             out = model(x)
 
             optimizer.zero_grad()
+
             loss = criterion(out, y)
 
             loss.backward()
@@ -131,6 +202,7 @@ if __name__ == '__main__':
 
             with torch.no_grad():
                 out = model(x)
+
                 loss = criterion(out, y)
 
                 val_epoch_loss += loss.item()

@@ -13,7 +13,7 @@ import copy
 import os
 import random
 
-from models import CNNMnist
+from models import CNNMnist, Cifar10CnnModel, Cifar10ResNet
 
 
 class ClientDataset(Dataset):
@@ -32,6 +32,11 @@ class ClientDataset(Dataset):
 mnist_transforms = T.Compose([
         T.ToTensor(),
         T.Normalize((0.1307,), (0.3081,)),
+    ])
+
+cifar10_transforms = T.Compose([
+    T.ToTensor(),
+    T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
     ])
 
 
@@ -77,6 +82,14 @@ class FederatedAveraging():
             self.clients_dataset = self._distribute_mnist_dataset(self.training_data, num_clients)
             self.server_model = CNNMnist()
             self.architecture = CNNMnist()
+
+        elif dataset == 'cifar10':
+            self.training_data = dset.CIFAR10(data_dir, train=True, transform=cifar10_transforms, download=download)
+            self.test_data = dset.CIFAR10(data_dir, train=False, transform=cifar10_transforms, download=download)
+            self.test_loader = DataLoader(self.test_data, batch_size=int(len(self.test_data) / 10), shuffle=False)
+            self.clients_dataset = self._distribute_mnist_dataset(self.training_data, num_clients)
+            self.server_model = Cifar10ResNet()
+            self.architecture = Cifar10ResNet()
 
         ## more experiments expected
         else:
@@ -142,7 +155,7 @@ class FederatedAveraging():
             dict_users = {i: np.array([]) for i in range(num_clients)}
             idxs = np.arange(len(dataset))
             all_idxs = {}
-            labels = dataset.train_labels.numpy()
+            labels = torch.tensor(dataset.targets).numpy()
 
             # sort labels
             idxs_labels = np.vstack((idxs, labels))
@@ -171,11 +184,15 @@ class FederatedAveraging():
 
         # non-iid data
         else:
-            num_shards, num_imgs = 200, 300
+            if self.dataset == 'mnist':
+                num_shards, num_imgs = 200, 300
+            else:
+                num_shards, num_imgs = 200, 250
+
             idx_shard = [i for i in range(num_shards)]
             dict_users = {i: np.array([]) for i in range(num_clients)}
             idxs = np.arange(num_shards * num_imgs)
-            labels = dataset.train_labels.numpy()
+            labels = torch.tensor(dataset.targets).numpy()
 
             # sort labels
             idxs_labels = np.vstack((idxs, labels))
@@ -353,9 +370,12 @@ if __name__ == '__main__':
     torch.manual_seed(42)
 
     # iid split
-    mnist_iid = FederatedAveraging(100, 10, iid=True, download=True)
-    mnist_iid.train(ratio=0.2, epochs=1, rounds=20, lr=0.01, opt='sgd')
+    # mnist_iid = FederatedAveraging(100, 10, iid=True, download=True)
+    # mnist_iid.train(ratio=0.2, epochs=1, rounds=20, lr=0.01, opt='sgd')
 
     # non-iid split
-    mnist_non_iid = FederatedAveraging(100, 10)
-    mnist_non_iid.train(ratio=0.2, epochs=1, rounds=100, opt='sgd', lr=0.05)
+    # mnist_non_iid = FederatedAveraging(100, 10)
+    # mnist_non_iid.train(ratio=0.2, epochs=1, rounds=100, opt='sgd', lr=0.05)
+
+    cifar10_iid = FederatedAveraging(100, 10, dataset='cifar10', iid=True, download=False)
+    cifar10_iid.train(ratio=0.2, epochs=1, rounds=20, lr=0.01, opt='sgd')
