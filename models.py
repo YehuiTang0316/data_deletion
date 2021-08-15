@@ -78,7 +78,7 @@ class Cifar10ResNet(nn.Module):
         super(Cifar10ResNet, self).__init__()
 
         # load a pre-trained model for the feature extractor
-        self.feature_extractor = nn.Sequential(*list(resnet18(pretrained=True).children())[:-1]).eval()
+        self.feature_extractor = nn.Sequential(*list(resnet18(pretrained=True).children())[:-1])
         self.fc = nn.Linear(512, 10)
 
         # fix the pre-trained network

@@ -8,6 +8,7 @@ from dp_tools import analysis
 from torchvision import transforms as T
 from torch.utils.data import DataLoader, Dataset, sampler
 import torch.optim as optim
+from torch.optim.lr_scheduler import CyclicLR, CosineAnnealingLR
 
 import torch
 import torch.nn as nn
@@ -62,11 +63,15 @@ class Trail(BackdoorAttack):
         print("Distributed {:d} non-sensitive data to training on server.".format(len(idxs)))
 
     def _train_server(self):
-        optimizer = optim.SGD(self.server_model.parameters(), lr=0.05, momentum=0.8)
+        optimizer = optim.SGD(self.server_model.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
+        scheduler = CyclicLR(optimizer, base_lr=0.0001, max_lr=0.1, step_size_up=10000, step_size_down=10000,
+                             mode='triangular')
+        #
+        # scheduler = CosineAnnealingLR(optimizer, T_max=200)
         loss_fn = nn.CrossEntropyLoss()
 
         train_log, val_log = [], []
-        epochs = 40
+        epochs = 1
 
         print("training server model.")
         for epoch in range(epochs):
@@ -83,6 +88,7 @@ class Trail(BackdoorAttack):
                 train_loss += loss.item()
                 loss.backward()
                 optimizer.step()
+            scheduler.step()
 
             train_loss /= len(self.server_training)
             print('server epoch {:d}, train loss {:.4f}'.format(epoch, train_loss))
@@ -213,11 +219,12 @@ class Trail(BackdoorAttack):
                 l2_norms[key] = []
                 for i in weights.keys():
                     gradients[i][key] = weights[i][key] - self.server_model.state_dict()[key]
+                    gradients[i][key] = gradients[i][key].type(torch.FloatTensor)
                     l2_norms[key].append(torch.norm(gradients[i][key], 2).cpu().numpy())
 
             for key in gradients[0].keys():
                 max_norms[key] = np.median(l2_norms[key])
-                coeff = l2_norms[key] / max_norms[key]
+                coeff = l2_norms[key] / max_norms[key] if max_norms[key] != 0 else l2_norms[key] / (max_norms[key]+1e-6)
 
                 for i in range(len(gradients)):
                     if i == 0:

@@ -39,6 +39,18 @@ cifar10_transforms = T.Compose([
     T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
     ])
 
+transform_train = T.Compose([
+    T.RandomCrop(32, padding=4),
+    T.RandomHorizontalFlip(),
+    T.ToTensor(),
+    T.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+])
+
+transform_test = T.Compose([
+    T.ToTensor(),
+    T.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+])
+
 
 class FederatedAveraging():
     """
@@ -84,8 +96,8 @@ class FederatedAveraging():
             self.architecture = CNNMnist()
 
         elif dataset == 'cifar10':
-            self.training_data = dset.CIFAR10(data_dir, train=True, transform=cifar10_transforms, download=download)
-            self.test_data = dset.CIFAR10(data_dir, train=False, transform=cifar10_transforms, download=download)
+            self.training_data = dset.CIFAR10(data_dir, train=True, transform=transform_train, download=download)
+            self.test_data = dset.CIFAR10(data_dir, train=False, transform=transform_test, download=download)
             self.test_loader = DataLoader(self.test_data, batch_size=int(len(self.test_data) / 10), shuffle=False)
             self.clients_dataset = self._distribute_mnist_dataset(self.training_data, num_clients)
             self.server_model = Cifar10ResNet()
