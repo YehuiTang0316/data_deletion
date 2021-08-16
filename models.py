@@ -64,11 +64,11 @@ class FTCifar10(nn.Module):
 class Cifar10CnnModel(nn.Module):
     def __init__(self):
         super(Cifar10CnnModel, self).__init__()
-        self.ft = FTCifar10()
+        self.feature_extractor = FTCifar10()
         self.fc3 = nn.Linear(84, 10)
 
     def forward(self, x):
-        features = self.ft(x)
+        features = self.feature_extractor(x)
         output = self.fc3(features)
         return features, output
 
@@ -153,7 +153,7 @@ if __name__ == '__main__':
         for data in dataloader:
             inputs, labels = data
             inputs, labels = inputs.to(device), labels.to(device)
-            output = model(inputs)
+            _, output = model(inputs)
             max_pred, pred = torch.max(output.data, dim=1)
             total += labels.size(0)
             correct += (pred == labels).sum().item()
@@ -161,10 +161,11 @@ if __name__ == '__main__':
 
 
     model = Cifar10ResNet().to(device)
-    optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
+    optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
     criterion = nn.CrossEntropyLoss()
+    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[150, 250], gamma=0.1)
 
-    epoch = 20
+    epoch = 300
     print_every = 50
     train_loss = []
     val_loss = []
@@ -177,7 +178,7 @@ if __name__ == '__main__':
             x = x.to(device=device)
             y = y.to(device=device, dtype=torch.long)
 
-            out = model(x)
+            _, out = model(x)
 
             optimizer.zero_grad()
 
@@ -193,6 +194,7 @@ if __name__ == '__main__':
 
         train_epoch_loss /= len(loader_train)
         train_loss += [train_epoch_loss]
+        scheduler.step()
 
         val_epoch_loss = 0
         for i, (x, y) in enumerate(loader_val):
@@ -201,7 +203,7 @@ if __name__ == '__main__':
             y = y.to(device=device, dtype=torch.long)
 
             with torch.no_grad():
-                out = model(x)
+                _, out = model(x)
 
                 loss = criterion(out, y)
 
@@ -216,11 +218,11 @@ if __name__ == '__main__':
         print('test arrcuracy: {:.4f}'.format(evaluation(loader_test)))
 
         # plot training log
-        plt.figure()
-        plt.plot(train_loss)
-        plt.plot(val_loss)
-        plt.legend(["train loss", "val loss"])
-        plt.show()
+        # plt.figure()
+        # plt.plot(train_loss)
+        # plt.plot(val_loss)
+        # plt.legend(["train loss", "val loss"])
+        # plt.show()
 
 
 

@@ -95,13 +95,21 @@ class FederatedAveraging():
             self.server_model = CNNMnist()
             self.architecture = CNNMnist()
 
+        elif dataset == 'fashion-mnist':
+            self.training_data = dset.FashionMNIST(data_dir, train=True, transform=mnist_transforms, download=download)
+            self.test_data = dset.FashionMNIST(data_dir, train=False, transform=mnist_transforms, download=download)
+            self.test_loader = DataLoader(self.test_data, batch_size=int(len(self.test_data) / 10), shuffle=False)
+            self.clients_dataset = self._distribute_mnist_dataset(self.training_data, num_clients)
+            self.server_model = CNNMnist()
+            self.architecture = CNNMnist()
+
         elif dataset == 'cifar10':
             self.training_data = dset.CIFAR10(data_dir, train=True, transform=transform_train, download=download)
             self.test_data = dset.CIFAR10(data_dir, train=False, transform=transform_test, download=download)
             self.test_loader = DataLoader(self.test_data, batch_size=int(len(self.test_data) / 10), shuffle=False)
             self.clients_dataset = self._distribute_mnist_dataset(self.training_data, num_clients)
-            self.server_model = Cifar10ResNet()
-            self.architecture = Cifar10ResNet()
+            self.server_model = Cifar10CnnModel()
+            self.architecture = Cifar10CnnModel()
 
         ## more experiments expected
         else:
@@ -196,7 +204,7 @@ class FederatedAveraging():
 
         # non-iid data
         else:
-            if self.dataset == 'mnist':
+            if self.dataset == 'mnist' or 'fashion-mnist':
                 num_shards, num_imgs = 200, 300
             else:
                 num_shards, num_imgs = 200, 250

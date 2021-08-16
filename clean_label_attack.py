@@ -148,7 +148,7 @@ if __name__ == '__main__':
 
     np.random.seed(42)
     torch.manual_seed(42)
-    sim = CleanLabelAttack(100, 10, 0.0001, use_dp=True)
+    sim = CleanLabelAttack(100, 10, 0.0001, use_dp=True, dataset='fashion-mnist', download=True)
     sim.train(ratio=0.2, epochs=1, rounds=1, opt='sgd', lr=0.005)
 
     # with open('4_cla.pkl', 'wb') as f:

@@ -71,7 +71,7 @@ class Trail(BackdoorAttack):
         loss_fn = nn.CrossEntropyLoss()
 
         train_log, val_log = [], []
-        epochs = 40
+        epochs = 200
 
         print("training server model.")
         for epoch in range(epochs):
@@ -236,7 +236,7 @@ class Trail(BackdoorAttack):
                 updates[key] += torch.randn_like(updates[key]) * self.sigma * max_norms[key]
                 updates[key] = torch.div(updates[key], len(gradients))
 
-                w[key] = self.server_model.state_dict()[key] + updates[key]
+                w[key] = self.server_model.state_dict()[key].cpu() + updates[key]
 
         else:
             w = weights[0]
