@@ -1,15 +1,44 @@
 # Can You Delete Data From My Machine Learning Models?
 ## Federated Learning
-To use federated learning algorithm, ```fl = FederatedAveraging(num_clients[int], client_batch_size[int])```. Both i.i.d client
-dataset and non-i.i.d dataset are supported. Specify it when declaring,
- like ```fl = FederatedAveraging(num_clients[int], client_batch_size[int], iid=False)``` for non-i.i.d data.
-## Data Deletion
-Currently, SISA deletion is enabled. SISA() is implemented as a child class of FederatedAveraging(). To use SISA to delete a training data in a trained federated learning system, 
-use 
-```sisa = Sisa(num_clients, batch_size).delete(client_id[int], idxs[list])```.
+In this project, we only use simple Federated Averaging algorithm.
+Class ```FederatedAveraging()``` in federated_avg.py is implemented as the parent class for entire project.  
 
-## Membership Inference Attack
-The initial idea is to use membership inference attack for deletion verification, to use it, ```mia(num_shadow_models[int])```.
+### Pretraining Before Communication
+The code for pretraining can be found at ```trail.py```.
+
+### Averaging with Differential Privacy
+In ```dp.py```, we trailed three different ways to add differential privacy protocol in the communication
+between the server and clients. The final adopted version is class ```DPFL3()```.
+And the implementation of DP-SGD and calculation of $\epsilon, \delta$ is based on 
+pyvacy(https://github.com/ChrisWaites/pyvacy).
+
+
+
+## Data Deletion
+SISA deletion under Federated Learning setting is the deletion algorithm we implemented for client-level
+data deletion. The implementation can be found under ```sisa.py```.
+ The experiment shown that with strong differential privacy guarantee that delete data from local machine and
+ then averaging can successfully delete data from server model.
+
+
+## Verification
+Three types of verification algorithm has been tested in this project.
+You can find membership inference attack at ```mia.py```,
+label flipping backdoor attack at ```backdoor.py``` and clean label backdoor attack at ```clean_label_attack.py```. 
+
+
+## Models and Dataset
+Models we use is Lenet-5 and Resnet18, you can find the implementation of them in ```models.py```.
+The datasets we use are MNIST, Fashion MNIST and CIFAR10.
+
+
+## Reproduction
+To reproduce the experiment in the paper, you can start with ```clean_label_attack.py```.
+First create a object with ```sim = CleanLabelAttack()```,
+then use ```sim.train()``` to train federated learning model.
+After fine-tuning your model, you can use ```sim.attack()``` to insert a backdoor into the server model
+and later test deletion effectiveness with ```sim.delete()```.
+
 
 ## Tests
-All tests for codes are available under ```./tests```.
+All tests for codes are available under ```./tests``` implemented via pytests.
