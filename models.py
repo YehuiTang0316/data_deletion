@@ -92,14 +92,21 @@ class Cifar10ResNet(nn.Module):
         return features, outputs
 
 
-def imshow(input, title):
+def imshow(input, title, dataset):
     # torch.Tensor => numpy
-    input = input.numpy().transpose((1, 2, 0))
+    if dataset == 'cifar10':
+        input = input.cpu().numpy().transpose((1, 2, 0))
     # undo image normalization
-    mean = np.array([0.485, 0.456, 0.406])
-    std = np.array([0.229, 0.224, 0.225])
-    input = std * input + mean
-    input = np.clip(input, 0, 1)
+        mean = np.array([0.485, 0.456, 0.406])
+        std = np.array([0.229, 0.224, 0.225])
+        input = std * input + mean
+        input = np.clip(input, 0, 1)
+    else:
+        input = input.cpu().numpy()
+        mean = np.array([0.1307])
+        std = np.array([0.3081])
+        input = std * input + mean
+        input = np.clip(input, 0, 1)
     # display images
     plt.imshow(input)
     plt.title(title)

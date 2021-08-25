@@ -117,7 +117,7 @@ class Trail(BackdoorAttack):
 
         self.restore_model = copy.deepcopy(self.server_model)
 
-    def _train_client(self, client_id, epochs, opt, criterion, lr, retrain=False, gamma=2):
+    def _train_client(self, client_id, epochs, opt, criterion, lr, retrain=False, gamma=1):
         """
         :param client_id:
         :param ratio:
